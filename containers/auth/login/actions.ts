@@ -64,8 +64,9 @@ export async function resendVerification(
     email: parsed.data,
     options: { emailRedirectTo: getAuthConfirmUrl() },
   });
-  const code = getAuthErrorCode(error);
-  if (code === "over_email_send_rate_limit" || code === "over_request_rate_limit") {
+  // Sama dengan lupa password: batas kirim email tidak ditampilkan agar status
+  // akun tidak bocor; hanya batas request per-IP.
+  if (getAuthErrorCode(error) === "over_request_rate_limit") {
     return {
       success: false,
       message: getAuthErrorMessage(error, "Gagal mengirim ulang email."),

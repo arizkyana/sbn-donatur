@@ -32,8 +32,10 @@ export async function requestPasswordReset(
     // /auth/confirm (type=recovery) mengarahkan ke /atur-ulang-password.
     { redirectTo: getAuthConfirmUrl() },
   );
-  const code = getAuthErrorCode(error);
-  if (code === "over_email_send_rate_limit" || code === "over_request_rate_limit") {
+  // Hanya batas request per-IP yang ditampilkan. Batas kirim email
+  // (over_email_send_rate_limit) hanya terjadi untuk email terdaftar, jadi
+  // menampilkannya akan membocorkan email mana yang punya akun.
+  if (getAuthErrorCode(error) === "over_request_rate_limit") {
     return {
       success: false,
       message: getAuthErrorMessage(error, "Gagal mengirim email."),
