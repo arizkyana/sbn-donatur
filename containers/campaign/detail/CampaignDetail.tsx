@@ -53,6 +53,7 @@ export async function CampaignDetail({ slug }: { slug: string }) {
       />
       <DonateBar
         slug={campaign.slug}
+        title={campaign.title}
         isEnded={isCampaignEnded(campaign.end_date, new Date())}
       />
     </article>
