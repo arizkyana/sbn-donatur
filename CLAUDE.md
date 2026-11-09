@@ -1,0 +1,97 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+@AGENTS.md
+
+## Konteks Project
+
+`sbn-donatur` adalah app publik untuk donatur **SBN Crowdfunding Platform** (domain `sobatbaik.org`). Repo ini bagian dari workspace `../../` yang **bukan monorepo** (tiap folder punya repo git sendiri):
+
+- `../sbn-office`: panel admin. Ini **implementasi acuan**: pola kode donatur disamakan dengan office, jadi lihat file di sana sebelum membuat yang setara di sini (`lib/supabase/*`, `lib/types.ts`, `lib/utils.ts`, `app/providers.tsx`, `containers/auth/login/`).
+- `../sbn-supabase`: migration, RLS, storage bucket, dan generate types. Skema database diubah di sana, bukan di sini. `npm run db:types` di repo itu menulis ulang `lib/supabase/database.types.ts` di kedua app, jadi file ini jangan diedit manual.
+- `../../planning/init.md`: spesifikasi utama (routes, data model, RLS, alur Midtrans, design pattern). `../../planning/001-fondasi.md`: backlog fondasi; task khusus donatur adalah `FND014` (samakan fondasi dengan office) dan `FND015` (layout + bottom navigation). Baca dokumen ini sebelum mengerjakan fitur.
+
+Saat ini app masih skeleton create-next-app. Yang sudah ada hanya `lib/utils.ts` (re-export `cn`) dan `lib/supabase/database.types.ts`. Yang **belum ada**: `zod`, `react-hook-form`, `@hookform/resolvers` (belum terpasang; versinya harus sama dengan office), `lib/supabase/{client,server,admin,proxy}.ts`, `lib/types.ts`, `formatRupiah()`, `app/providers.tsx`, `proxy.ts`, `containers/`, `components/ui/`. Metadata di `app/layout.tsx` masih bawaan.
+
+Route yang direncanakan:
+
+| Route                                 | Halaman                                                               | Login |
+| ------------------------------------- | --------------------------------------------------------------------- | ----- |
+| `/`                                   | Beranda: daftar campaign, pencarian dan filter                        | -     |
+| `/campaign/[slug]`                    | Detail campaign: progres, sisa hari, donasi masuk, bagikan, WhatsApp  | -     |
+| `/campaign/[slug]/donasi`             | Formulir donasi                                                       | -     |
+| `/donasi/[order_id]`                  | Status pembayaran                                                     | -     |
+| `/blog`, `/blog/[slug]`               | Blog (filter kategori, artikel & video YouTube)                       | -     |
+| `/syarat-ketentuan`, `/tentang`       | S&K dan profil lembaga (dari tabel `settings`)                        | -     |
+| `/login`, `/daftar`, `/lupa-password` | Autentikasi donatur                                                   | -     |
+| `/akun`, `/akun/riwayat`              | Profil dan riwayat donasi pribadi (filter tanggal & campaign)         | ✓     |
+| `POST /api/midtrans/notification`     | Webhook Midtrans                                                      | -     |
+
+## Perintah
+
+```bash
+npm run dev            # dev server (Turbopack) di http://localhost:3000
+npm run build          # production build
+npm run lint           # ESLint (flat config) untuk seluruh project
+npx eslint <path>      # lint satu file
+npx tsc --noEmit       # type check
+npx shadcn add <nama>  # tambah komponen UI ke components/ui/
+```
+
+Belum ada test runner.
+
+## Next.js 16: Hal yang Berbeda
+
+- `next.config.ts` mengaktifkan `cacheComponents: true` dan `partialPrefetching`. Komponen yang membaca cookies/session **wajib** dibungkus `<Suspense>`, dan session tidak boleh di-`await` di top-level layout. Rujukan: `node_modules/next/dist/docs/01-app/02-guides/authentication-with-cache-components.md`.
+- `middleware.ts` sudah diganti `proxy.ts`. Rujukan: `node_modules/next/dist/docs/01-app/01-getting-started/16-proxy.md`.
+- `LayoutProps<"/">` / `PageProps` adalah tipe global hasil typegen Next, jadi tidak perlu di-import.
+- Tailwind v4 dimuat lewat loader `@tailwindcss/turbopack` di `next.config.ts`. Tidak ada `tailwind.config` maupun PostCSS config; token tema ada di `app/globals.css`.
+- Komponen shadcn memakai style `base-nova`, yang dibangun di atas `@base-ui/react` (bukan Radix). `cn` berasal dari package npm `cn` (pengganti clsx + tailwind-merge), dan `lib/utils.ts` hanya me-re-export-nya.
+
+## Arsitektur
+
+### Struktur folder
+
+- `app/` hanya untuk routing (`page.tsx`, `layout.tsx`, `route.ts`) dan tidak berisi logika. `page.tsx` cukup me-render container.
+- `containers/<modul>/<halaman>/` berisi `<Nama>.tsx` (named export, di-re-export lewat `index.ts`), `<Nama>.types.ts` (schema zod + type `z.infer`), `actions.ts` (`"use server"`), `components/`, dan `hooks/use<Nama>.ts` (react-hook-form, pemanggilan action, query).
+- `lib/supabase/`: `client.ts` (browser, hanya untuk membaca), `server.ts` (session user, RLS berlaku), `admin.ts` (service role, `import "server-only"`), `proxy.ts` (`updateSession()` untuk `proxy.ts` root).
+- `lib/auth.ts` di donatur cukup berisi `getCurrentUser()`. **Jangan** salin `requireAdmin()` dari office.
+
+### Mutasi data: Server Action + Zod
+
+Semua perubahan data (termasuk login/daftar/logout) dilakukan lewat Server Action. Komponen client tidak menulis ke Supabase secara langsung.
+
+1. Schema zod ditulis sekali di `<Nama>.types.ts`, dipakai oleh `zodResolver` di client dan `schema.safeParse()` di server. Schema tidak boleh ditaruh di `actions.ts`, karena file `"use server"` hanya boleh mengekspor async function. Pesan validasi ditulis dalam Bahasa Indonesia.
+2. Server Action: `safeParse` (bila gagal, return `z.flattenError(result.error).fieldErrors`) → akses Supabase → `revalidatePath()` / `redirect()` bila perlu → return `ActionResult` (`lib/types.ts`).
+3. Hook memakai `formState.isSubmitting` untuk loading, memasang `fieldErrors` lewat `setError`, menampilkan `message` di atas form, dan memanggil `queryClient.invalidateQueries({ queryKey: ["<modul>"] })` setelah berhasil.
+
+### Membaca data
+
+- Halaman publik yang butuh SEO (detail campaign, detail blog, S&K, tentang): Server Component + `lib/supabase/server.ts`, dengan `generateMetadata` (Open Graph: judul, `description`, `cover`).
+- Daftar dengan pagination/filter/pencarian (campaign, blog, riwayat): Tanstack Query (`useQuery` + `placeholderData: keepPreviousData`) dengan `lib/supabase/client.ts`, `.range()`, dan `{ count: "exact" }`. Query key: `["<modul>", { ...params }]`.
+- Progres campaign dibaca dari view `campaign_progress` (`collected_amount`, `donor_count`). Daftar donasi masuk dibaca dari view `public_donations` (sudah berisi "Anonim" dan tanpa email/no. HP). Publik tidak bisa membaca tabel `transactions` secara langsung.
+- Riwayat donasi hanya mencakup transaksi dengan `users_id = auth.uid()`, yaitu donasi yang dibuat saat login. Donasi tanpa login tidak digabungkan ke akun.
+
+### Alur donasi (Midtrans Snap)
+
+1. Formulir donasi (nama, email, no. HP, nominal, anonim) bisa diisi tanpa login. Bila login, data terisi dari `profiles`.
+2. Server Action membuat baris `transactions` berstatus `PENDING` dengan `order_id` unik **lewat `lib/supabase/admin.ts`** (insert/update `transactions` hanya boleh dari server dengan service role), meminta Snap token, lalu mengarahkan donatur ke Midtrans.
+3. `POST /api/midtrans/notification` memverifikasi `signature_key` (SHA512 dari `order_id + status_code + gross_amount + server_key`), memetakan status, dan meng-update transaksi secara **idempoten** (notifikasi yang sama bisa datang berkali-kali). Saat status berubah menjadi `SUCCESS`, isi `paid_at` lalu kirim email bukti donasi via Resend.
+4. `/donasi/[order_id]` membaca status dari database, bukan dari Midtrans.
+
+Pemetaan `transaction_status` → `payment_status`: `settlement` / `capture` (dengan `fraud_status` `accept`) → `SUCCESS`; `pending` → `PENDING`; `expire` → `EXPIRED`; `cancel` / `deny` / `failure` → `FAILED`.
+
+### Auth dan layout
+
+- `proxy.ts` donatur **hanya** me-refresh session. Tidak ada redirect global ke login (berbeda dengan office), karena hampir semua halaman publik. Proteksi dilakukan per halaman di `/akun/*`.
+- Layout mobile-first: konten `max-w-md` di tengah, latar luar abu-abu muda di desktop, header (logo + "Sobat Baik Nusantara"), dan Bottom Navigation fixed dengan 4 item: Beranda (`/`), Blog (`/blog`), Riwayat (`/akun/riwayat`), Akun (`/akun`). Item aktif memakai warna `--primary` (lewat `usePathname`). Konten diberi `padding-bottom` agar tidak tertutup navigasi.
+- Metadata root: title template `%s | Sobat Baik Nusantara`, `<html lang="id">`, `metadataBase` dari `NEXT_PUBLIC_SITE_URL`.
+
+### Konvensi lain
+
+- Teks UI ditulis dalam Bahasa Indonesia.
+- Nominal rupiah ditampilkan lewat `formatRupiah()` di `lib/utils.ts`.
+- Nama kolom foreign key memakai format `<tabel>_id` (contoh: `campaigns_id`, `users_id`).
+- Env ada di `.env.local` (di-gitignore). Variabel tanpa prefix `NEXT_PUBLIC_` (`SUPABASE_SERVICE_ROLE_KEY`, `MIDTRANS_SERVER_KEY`, `RESEND_API_KEY`) hanya boleh dipakai di server. `MIDTRANS_IS_PRODUCTION=false` sampai go-live.
+- Di luar scope (jangan dibuat): halaman zakat, program trending, doa donatur, dan Supabase Realtime.
