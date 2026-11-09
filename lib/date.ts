@@ -11,6 +11,17 @@ const RELATIVE_TIME_UNITS: [Intl.RelativeTimeFormatUnit, number][] = [
   ["minute", 60],
 ];
 
+const dateTimeFormatter = new Intl.DateTimeFormat("id-ID", {
+  timeZone: "Asia/Jakarta",
+  dateStyle: "long",
+  timeStyle: "short",
+});
+
+/** `timestamptz` → tanggal dan jam WIB, contoh "9 November 2026 pukul 10.00 WIB". */
+export function formatDateTime(timestamp: string) {
+  return `${dateTimeFormatter.format(new Date(timestamp))} WIB`;
+}
+
 /** `timestamptz` → waktu relatif, contoh "5 menit yang lalu", "kemarin". */
 export function formatRelativeTime(timestamp: string, now: Date) {
   const seconds = (new Date(timestamp).getTime() - now.getTime()) / 1000;

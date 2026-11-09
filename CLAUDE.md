@@ -10,9 +10,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - `../sbn-office`: panel admin. Ini **implementasi acuan**: pola kode donatur disamakan dengan office, jadi lihat file di sana sebelum membuat yang setara di sini (`lib/supabase/*`, `lib/types.ts`, `lib/utils.ts`, `app/providers.tsx`). `containers/auth/login/` di office adalah contoh lengkap pola form (schema, action, hook, form).
 - `../sbn-supabase`: migration, RLS, storage bucket, dan generate types. Skema database diubah di sana, bukan di sini. `npm run db:types` di repo itu menulis ulang `lib/supabase/database.types.ts` di kedua app, jadi file ini jangan diedit manual.
-- `../../planning/init.md`: spesifikasi utama (routes, data model, RLS, alur Midtrans, design pattern). `../../planning/001-fondasi.md`: backlog fondasi; task khusus donatur adalah `FND014` (samakan fondasi dengan office) dan `FND015` (layout + bottom navigation). `../../planning/002-campaign.md`: backlog campaign; task donatur adalah `CMP007`–`CMP012`. Baca dokumen ini sebelum mengerjakan fitur.
+- `../../planning/init.md`: spesifikasi utama (routes, data model, RLS, alur Midtrans, design pattern). `../../planning/001-fondasi.md`: backlog fondasi; task khusus donatur adalah `FND014` (samakan fondasi dengan office) dan `FND015` (layout + bottom navigation). `../../planning/002-campaign.md`: backlog campaign; task donatur adalah `CMP007`–`CMP012`. `../../planning/003-donasi-midtrans.md`: backlog donasi (`DON001`–`DON009`), dengan rencana teknis di `003-donasi-midtrans-rencana.md`. Baca dokumen ini sebelum mengerjakan fitur.
 
-Fondasi sudah selesai (FND014, FND015): Supabase client, `proxy.ts` (refresh session), `lib/auth.ts`, `app/providers.tsx` (Tanstack Query + `<Toaster />`), warna brand, serta layout mobile-first dengan header dan Bottom Navigation (`components/layout/`). Modul campaign ada di `containers/home/` (daftar campaign di beranda) dan `containers/campaign/detail/` (`/campaign/[slug]`). Halaman lain (formulir donasi, status pembayaran, blog, akun, S&K, tentang) belum ada, jadi menu Blog, Riwayat, dan Akun masih menuju halaman 404.
+Fondasi sudah selesai (FND014, FND015): Supabase client, `proxy.ts` (refresh session), `lib/auth.ts`, `app/providers.tsx` (Tanstack Query + `<Toaster />`), warna brand, serta layout mobile-first dengan header dan Bottom Navigation (`components/layout/`). Modul campaign ada di `containers/home/` (daftar campaign di beranda) dan `containers/campaign/detail/` (`/campaign/[slug]`). Modul donasi (DON001–DON006) ada di `containers/donation/`: `form/` (`/campaign/[slug]/donasi`), `notification/` (webhook), dan `status/` (`/donasi/[order_id]`). Email bukti donasi (DON007) dan isian dari profil (DON008) belum ada. Halaman lain (blog, akun, S&K, tentang) juga belum ada, jadi menu Blog, Riwayat, dan Akun masih menuju halaman 404.
 
 Route yang direncanakan:
 
@@ -39,7 +39,7 @@ npx tsc --noEmit       # type check
 npx shadcn add <nama>  # tambah komponen UI ke components/ui/
 ```
 
-Belum ada test runner. Setelah memindah atau menghapus route, `npx tsc --noEmit` bisa error karena `.next/types/validator.ts` masih menyimpan route lama; jalankan `npm run build` untuk menulis ulangnya.
+Belum ada test runner. Setelah memindah atau menghapus route, `npx tsc --noEmit` bisa error karena `.next/types/validator.ts` masih menyimpan route lama; jalankan `npm run build` atau `npx next typegen` untuk menulis ulangnya. `npx next typegen` juga dibutuhkan setelah menambah route baru agar `PageProps<"/route-baru">` dikenali.
 
 ## Next.js 16: Hal yang Berbeda
 
@@ -52,7 +52,7 @@ Belum ada test runner. Setelah memindah atau menghapus route, `npx tsc --noEmit`
   - `usePathname()` di luar `<Suspense>` begitu ada route dengan param dinamis (seperti `/campaign/[slug]`). Karena itu `ActiveBottomNavigation` dibungkus `<Suspense>` di root layout. Lakukan hal yang sama untuk komponen client lain di layout yang membaca URL.
   - Membaca `params` di top-level `page.tsx` route dinamis tanpa `<Suspense>` di atasnya. `/campaign/[slug]` aman karena punya `loading.tsx`. Alternatifnya, baca `params` di komponen anak yang dibungkus `<Suspense>`, atau sediakan `generateStaticParams`.
   - `new Date()`, `Date.now()`, atau `Math.random()` saat prerender. Panggil hanya di server component setelah akses data request (cookies/params), atau di client component yang baru dirender setelah data selesai di-fetch (contoh: `CampaignProgress`, `DonationList`).
-- `notFound()` di halaman yang punya `loading.tsx` dikirim setelah streaming dimulai, sehingga status HTTP tetap 200 dengan meta `noindex` (soft 404). Ini disengaja untuk `/campaign/[slug]`.
+- `notFound()` di halaman yang punya `loading.tsx` dikirim setelah streaming dimulai, sehingga status HTTP tetap 200 dengan meta `noindex` (soft 404). Ini disengaja untuk `/campaign/[slug]`, `/campaign/[slug]/donasi`, dan `/donasi/[order_id]`.
 - `next/image`: prop `priority` sudah deprecated, pakai `preload` (gambar LCP di server component) atau `loading="eager"`.
 
 ## Arsitektur
@@ -72,10 +72,11 @@ Belum ada test runner. Setelah memindah atau menghapus route, `npx tsc --noEmit`
   - `admin.ts` (service role, `import "server-only"`, hanya untuk insert/update `transactions`);
   - `proxy.ts` (`updateSession()` untuk `proxy.ts` root);
   - `database.types.ts` (hasil generate).
+- `lib/midtrans.ts` (`server-only`): integrasi Midtrans lewat `fetch` tanpa SDK. Isinya `ORDER_ID_PATTERN`, `generateOrderId(now)`, `createSnapTransaction()`, `verifySignature()`, `mapPaymentStatus()`, dan `getPaidAt(settlementTime, now)`. `MIDTRANS_SERVER_KEY` hanya boleh dibaca di file ini.
 - `lib/auth.ts` cukup berisi `getCurrentUser()`, dibungkus `React.cache()`. Hasilnya `CurrentUser` (termasuk `phone` untuk mengisi formulir donasi) atau `null` bila tidak login. Pemanggilnya wajib berada di dalam `<Suspense>`. **Jangan** salin `requireAdmin()` dari office.
-- Helper bersama: `lib/utils.ts` (`cn`, `formatRupiah()`), `lib/campaign.ts` (`getProgressPercent()` sama dengan office, plus `getRemainingDays()`, `isCampaignEnded()`, `formatRemainingDays()`, `getCampaignUrl()`), `lib/date.ts` (`formatRelativeTime()`), dan `hooks/use-debounced-value.ts` (sama dengan office).
+- Helper bersama: `lib/utils.ts` (`cn`, `formatRupiah()`), `lib/campaign.ts` (`getProgressPercent()` sama dengan office, plus `getRemainingDays()`, `isCampaignEnded()`, `formatRemainingDays()`, `getCampaignUrl()`), `lib/date.ts` (`formatRelativeTime()`, `formatDateTime()` dalam WIB), dan `hooks/use-debounced-value.ts` (sama dengan office).
 - Komponen yang dipakai lebih dari satu container ditaruh di `components/<modul>/` (contoh: `components/campaign/CampaignProgress.tsx`). Komponen internal container memakai default export.
-- Fungsi baca data di server (Server Component dan `generateMetadata`) ditaruh di `containers/<modul>/<halaman>/queries.ts` (`import "server-only"`, dibungkus `React.cache()`), contoh `getCampaignBySlug()`. Data campaign tidak memakai `use cache` karena dana terkumpul harus selalu terbaru.
+- Fungsi baca data di server (Server Component dan `generateMetadata`) ditaruh di `containers/<modul>/<halaman>/queries.ts` (`import "server-only"`, dibungkus `React.cache()`), contoh `getCampaignBySlug()` (dipakai ulang oleh formulir donasi dan `createDonation`) dan `getDonationByOrderId()`. Data campaign tidak memakai `use cache` karena dana terkumpul harus selalu terbaru.
 
 ### Mutasi data: Server Action + Zod
 
@@ -99,12 +100,14 @@ Semua perubahan data (termasuk login/daftar/logout) dilakukan lewat Server Actio
 
 ### Alur donasi (Midtrans Snap)
 
-1. Formulir donasi (nama, email, no. HP, nominal, anonim) bisa diisi tanpa login. Bila login, data terisi dari `profiles`.
-2. Server Action membuat baris `transactions` berstatus `PENDING` dengan `order_id` unik **lewat `lib/supabase/admin.ts`** (insert/update `transactions` hanya boleh dari server dengan service role), meminta Snap token, lalu mengarahkan donatur ke Midtrans.
-3. `POST /api/midtrans/notification` memverifikasi `signature_key` (SHA512 dari `order_id + status_code + gross_amount + server_key`), memetakan status, dan meng-update transaksi secara **idempoten** (notifikasi yang sama bisa datang berkali-kali). Saat status berubah menjadi `SUCCESS`, isi `paid_at` lalu kirim email bukti donasi via Resend.
-4. `/donasi/[order_id]` membaca status dari database, bukan dari Midtrans.
+1. Formulir donasi (nama, email, no. HP opsional, nominal minimal `MIN_DONATION_AMOUNT`, anonim) bisa diisi tanpa login. Bila login, data terisi dari `profiles` (DON008, belum dibuat). Campaign yang sudah berakhir tidak menampilkan form.
+2. `createDonation` (`containers/donation/form/actions.ts`) membuat baris `transactions` berstatus `PENDING` dengan `order_id` `SBN-YYYYMMDD-XXXXXXXX` **lewat `lib/supabase/admin.ts`** (insert/update `transactions` hanya boleh dari server dengan service role), membuat transaksi Snap, lalu menyimpan `redirect_url` di `payment_url`. Bila Snap gagal, baris menjadi `FAILED` dengan pesan error di `midtrans_payload`. Hook mengarahkan donatur dengan `window.location.assign()` (redirect Snap, bukan popup Snap.js), dan tombol tetap disabled selama `isSubmitSuccessful`.
+3. `POST /api/midtrans/notification` (`route.ts` tipis, logika di `containers/donation/notification/handler.ts`) memverifikasi `signature_key` (SHA512 dari `order_id + status_code + gross_amount + server_key`, `gross_amount` persis seperti string dari Midtrans), mencocokkan nominal, memetakan status, lalu meng-update transaksi secara **idempoten**: hanya baris yang masih `PENDING` yang berubah (`.eq("payment_status", "PENDING")`), jadi notifikasi berulang tidak mengubah transaksi final. `paid_at` diisi dari `settlement_time` (WIB) saat `SUCCESS`. Email bukti donasi (DON007) nanti dikirim lewat `after()` hanya bila update benar-benar mengubah baris.
+4. `/donasi/[order_id]` membaca status dari database lewat admin client dengan kolom terbatas (tanpa email/no. HP), bukan dari Midtrans. Selama `PENDING`, `AutoRefresh` memanggil `router.refresh()` tiap 5 detik sampai 3 menit.
 
-Pemetaan `transaction_status` → `payment_status`: `settlement` / `capture` (dengan `fraud_status` `accept`) → `SUCCESS`; `pending` → `PENDING`; `expire` → `EXPIRED`; `cancel` / `deny` / `failure` → `FAILED`.
+Pemetaan `transaction_status` → `payment_status`: `settlement` / `capture` (dengan `fraud_status` `accept`) → `SUCCESS`; `pending` dan `capture` + `challenge` → `PENDING`; `expire` → `EXPIRED`; `cancel` / `deny` / `failure` → `FAILED`. Status lain (`refund`, `chargeback`, dll.) diabaikan.
+
+Uji webhook di lokal dengan `curl` (contoh lengkap ada di DON005 backlog 003). Server action bisa dipanggil langsung lewat `POST` dengan header `Next-Action: <id>` (id dari `.next/dev/server/server-reference-manifest.json`) dan body JSON array argumen.
 
 ### Auth dan layout
 
@@ -115,7 +118,7 @@ Pemetaan `transaction_status` → `payment_status`: `settlement` / `capture` (de
   - item aktif berwarna `--primary`, dipilih oleh `getActiveHref()` (href terpanjang yang cocok), sehingga `/akun/riwayat` tidak ikut mengaktifkan Akun;
   - `<main>` diberi `pb-20` agar konten tidak tertutup navigasi (`h-16`).
 
-  Bila nanti ada halaman yang tidak boleh menampilkan navigasi (contoh: login atau formulir donasi), pindahkan layout ini ke route group.
+  Bila nanti ada halaman yang tidak boleh menampilkan navigasi (contoh: login), pindahkan layout ini ke route group. Formulir donasi dan halaman status tetap menampilkan navigasi.
 - Metadata root: title `{ default: "Sobat Baik Nusantara", template: "%s | Sobat Baik Nusantara" }`, `<html lang="id">`, `metadataBase` dari `NEXT_PUBLIC_SITE_URL` (fallback `http://localhost:3000`).
 
 ### Konvensi lain
