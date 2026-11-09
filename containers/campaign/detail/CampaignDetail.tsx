@@ -4,6 +4,7 @@ import { ImageIcon } from "lucide-react";
 import { CampaignProgress } from "@/components/campaign/CampaignProgress";
 import { isCampaignEnded } from "@/lib/campaign";
 import DonateBar from "./components/DonateBar";
+import DonationList from "./components/DonationList";
 import { getCampaignBySlug } from "./queries";
 
 export async function CampaignDetail({ slug }: { slug: string }) {
@@ -46,6 +47,10 @@ export async function CampaignDetail({ slug }: { slug: string }) {
           dangerouslySetInnerHTML={{ __html: campaign.content }}
         />
       )}
+      <DonationList
+        campaignsId={campaign.id}
+        donorCount={campaign.donorCount}
+      />
       <DonateBar
         slug={campaign.slug}
         isEnded={isCampaignEnded(campaign.end_date, new Date())}
