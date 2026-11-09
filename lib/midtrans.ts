@@ -12,6 +12,14 @@ const SNAP_BASE_URL =
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 
+// Webhook DON005. Dikirim per transaksi lewat header X-Override-Notification, jadi
+// notifikasi selalu kembali ke deployment yang membuat transaksi (lokal lewat tunnel,
+// staging, production) dan tidak bergantung pada Notification URL di dashboard.
+const NOTIFICATION_URL = new URL(
+  "/api/midtrans/notification",
+  SITE_URL,
+).toString();
+
 /** Format `generateOrderId()`, contoh `SBN-20261109-7K2QX9AB`. */
 export const ORDER_ID_PATTERN = /^SBN-\d{8}-[A-Z0-9]{8}$/;
 
@@ -64,6 +72,7 @@ export async function createSnapTransaction({
       Authorization: `Basic ${Buffer.from(`${getServerKey()}:`).toString("base64")}`,
       "Content-Type": "application/json",
       Accept: "application/json",
+      "X-Override-Notification": NOTIFICATION_URL,
     },
     body: JSON.stringify({
       transaction_details: { order_id: orderId, gross_amount: amount },
