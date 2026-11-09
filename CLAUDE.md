@@ -8,11 +8,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 `sbn-donatur` adalah app publik untuk donatur **SBN Crowdfunding Platform** (domain `sobatbaik.org`). Repo ini bagian dari workspace `../../` yang **bukan monorepo** (tiap folder punya repo git sendiri):
 
-- `../sbn-office`: panel admin. Ini **implementasi acuan**: pola kode donatur disamakan dengan office, jadi lihat file di sana sebelum membuat yang setara di sini (`lib/supabase/*`, `lib/types.ts`, `lib/utils.ts`, `app/providers.tsx`, `containers/auth/login/`).
+- `../sbn-office`: panel admin. Ini **implementasi acuan**: pola kode donatur disamakan dengan office, jadi lihat file di sana sebelum membuat yang setara di sini (`lib/supabase/*`, `lib/types.ts`, `lib/utils.ts`, `app/providers.tsx`). `containers/auth/login/` di office adalah contoh lengkap pola form (schema, action, hook, form).
 - `../sbn-supabase`: migration, RLS, storage bucket, dan generate types. Skema database diubah di sana, bukan di sini. `npm run db:types` di repo itu menulis ulang `lib/supabase/database.types.ts` di kedua app, jadi file ini jangan diedit manual.
 - `../../planning/init.md`: spesifikasi utama (routes, data model, RLS, alur Midtrans, design pattern). `../../planning/001-fondasi.md`: backlog fondasi; task khusus donatur adalah `FND014` (samakan fondasi dengan office) dan `FND015` (layout + bottom navigation). `../../planning/002-campaign.md`: backlog campaign; task donatur adalah `CMP007`–`CMP012`. Baca dokumen ini sebelum mengerjakan fitur.
 
-Fondasi sudah selesai: Supabase client, `proxy.ts` (refresh session), `lib/auth.ts`, `app/providers.tsx` (Tanstack Query + `<Toaster />`), serta layout mobile-first dengan header dan Bottom Navigation (`components/layout/`). Modul campaign ada di `containers/home/` (daftar campaign di beranda) dan `containers/campaign/detail/` (`/campaign/[slug]`). Halaman lain (formulir donasi, status pembayaran, blog, akun, S&K, tentang) belum ada.
+Fondasi sudah selesai (FND014, FND015): Supabase client, `proxy.ts` (refresh session), `lib/auth.ts`, `app/providers.tsx` (Tanstack Query + `<Toaster />`), warna brand, serta layout mobile-first dengan header dan Bottom Navigation (`components/layout/`). Modul campaign ada di `containers/home/` (daftar campaign di beranda) dan `containers/campaign/detail/` (`/campaign/[slug]`). Halaman lain (formulir donasi, status pembayaran, blog, akun, S&K, tentang) belum ada, jadi menu Blog, Riwayat, dan Akun masih menuju halaman 404.
 
 Route yang direncanakan:
 
@@ -39,7 +39,7 @@ npx tsc --noEmit       # type check
 npx shadcn add <nama>  # tambah komponen UI ke components/ui/
 ```
 
-Belum ada test runner.
+Belum ada test runner. Setelah memindah atau menghapus route, `npx tsc --noEmit` bisa error karena `.next/types/validator.ts` masih menyimpan route lama; jalankan `npm run build` untuk menulis ulangnya.
 
 ## Next.js 16: Hal yang Berbeda
 
@@ -47,8 +47,11 @@ Belum ada test runner.
 - `middleware.ts` sudah diganti `proxy.ts`. Rujukan: `node_modules/next/dist/docs/01-app/01-getting-started/16-proxy.md`.
 - `LayoutProps<"/">` / `PageProps` adalah tipe global hasil typegen Next, jadi tidak perlu di-import.
 - Tailwind v4 dimuat lewat loader `@tailwindcss/turbopack` di `next.config.ts`. Tidak ada `tailwind.config` maupun PostCSS config; token tema ada di `app/globals.css`.
-- Komponen shadcn memakai style `base-nova`, yang dibangun di atas `@base-ui/react` (bukan Radix). Komposisi elemen memakai prop `render` (contoh: `<Button nativeButton={false} render={<Link href="/" />}>`), bukan `asChild`. `cn` berasal dari package npm `cn` (pengganti clsx + tailwind-merge), dan `lib/utils.ts` hanya me-re-export-nya.
-- `new Date()` / `Date.now()` saat prerender membuat build gagal. Panggil hanya di server component setelah akses data request (cookies/params), atau di client component yang baru dirender setelah data selesai di-fetch (contoh: `CampaignProgress`, `DonationList`).
+- Komponen shadcn memakai style `base-nova`, yang dibangun di atas `@base-ui/react` (bukan Radix). Komposisi elemen memakai prop `render`, bukan `asChild`. Untuk `Button` yang dirender sebagai link, tambahkan `nativeButton={false}`: `<Button nativeButton={false} render={<Link href="/" />}>`. `cn` berasal dari package npm `cn` (pengganti clsx + tailwind-merge), dan `lib/utils.ts` hanya me-re-export-nya.
+- Jebakan `cacheComponents` yang membuat `npm run build` gagal:
+  - `usePathname()` di luar `<Suspense>` begitu ada route dengan param dinamis (seperti `/campaign/[slug]`). Karena itu `ActiveBottomNavigation` dibungkus `<Suspense>` di root layout. Lakukan hal yang sama untuk komponen client lain di layout yang membaca URL.
+  - Membaca `params` di top-level `page.tsx` route dinamis tanpa `<Suspense>` di atasnya. `/campaign/[slug]` aman karena punya `loading.tsx`. Alternatifnya, baca `params` di komponen anak yang dibungkus `<Suspense>`, atau sediakan `generateStaticParams`.
+  - `new Date()`, `Date.now()`, atau `Math.random()` saat prerender. Panggil hanya di server component setelah akses data request (cookies/params), atau di client component yang baru dirender setelah data selesai di-fetch (contoh: `CampaignProgress`, `DonationList`).
 - `notFound()` di halaman yang punya `loading.tsx` dikirim setelah streaming dimulai, sehingga status HTTP tetap 200 dengan meta `noindex` (soft 404). Ini disengaja untuk `/campaign/[slug]`.
 - `next/image`: prop `priority` sudah deprecated, pakai `preload` (gambar LCP di server component) atau `loading="eager"`.
 
@@ -58,8 +61,18 @@ Belum ada test runner.
 
 - `app/` hanya untuk routing (`page.tsx`, `layout.tsx`, `route.ts`) dan tidak berisi logika. `page.tsx` cukup me-render container.
 - `containers/<modul>/<halaman>/` berisi `<Nama>.tsx` (named export, di-re-export lewat `index.ts`), `<Nama>.types.ts` (schema zod + type `z.infer`), `actions.ts` (`"use server"`), `components/`, dan `hooks/use<Nama>.ts` (react-hook-form, pemanggilan action, query).
-- `lib/supabase/`: `client.ts` (browser, hanya untuk membaca), `server.ts` (session user, RLS berlaku), `admin.ts` (service role, `import "server-only"`), `proxy.ts` (`updateSession()` untuk `proxy.ts` root).
-- `lib/auth.ts` di donatur cukup berisi `getCurrentUser()`. **Jangan** salin `requireAdmin()` dari office.
+- `components/layout/`: kerangka halaman donatur.
+  - `Header`: logo dan nama "Sobat Baik Nusantara".
+  - `BottomNavigation`: komponen presentasional dengan prop `activeHref`. Dipakai juga sebagai fallback `<Suspense>` (tanpa item aktif).
+  - `ActiveBottomNavigation`: client component yang membaca `usePathname()`.
+  - `navigation.ts`: `NAV_ITEMS`, `isActivePath()`, dan `getActiveHref()`.
+- `lib/supabase/`:
+  - `client.ts` (browser, hanya untuk membaca);
+  - `server.ts` (session user, RLS berlaku);
+  - `admin.ts` (service role, `import "server-only"`, hanya untuk insert/update `transactions`);
+  - `proxy.ts` (`updateSession()` untuk `proxy.ts` root);
+  - `database.types.ts` (hasil generate).
+- `lib/auth.ts` cukup berisi `getCurrentUser()`, dibungkus `React.cache()`. Hasilnya `CurrentUser` (termasuk `phone` untuk mengisi formulir donasi) atau `null` bila tidak login. Pemanggilnya wajib berada di dalam `<Suspense>`. **Jangan** salin `requireAdmin()` dari office.
 - Helper bersama: `lib/utils.ts` (`cn`, `formatRupiah()`), `lib/campaign.ts` (`getProgressPercent()` sama dengan office, plus `getRemainingDays()`, `isCampaignEnded()`, `formatRemainingDays()`, `getCampaignUrl()`), `lib/date.ts` (`formatRelativeTime()`), dan `hooks/use-debounced-value.ts` (sama dengan office).
 - Komponen yang dipakai lebih dari satu container ditaruh di `components/<modul>/` (contoh: `components/campaign/CampaignProgress.tsx`). Komponen internal container memakai default export.
 - Fungsi baca data di server (Server Component dan `generateMetadata`) ditaruh di `containers/<modul>/<halaman>/queries.ts` (`import "server-only"`, dibungkus `React.cache()`), contoh `getCampaignBySlug()`. Data campaign tidak memakai `use cache` karena dana terkumpul harus selalu terbaru.
@@ -70,7 +83,12 @@ Semua perubahan data (termasuk login/daftar/logout) dilakukan lewat Server Actio
 
 1. Schema zod ditulis sekali di `<Nama>.types.ts`, dipakai oleh `zodResolver` di client dan `schema.safeParse()` di server. Schema tidak boleh ditaruh di `actions.ts`, karena file `"use server"` hanya boleh mengekspor async function. Pesan validasi ditulis dalam Bahasa Indonesia.
 2. Server Action: `safeParse` (bila gagal, return `z.flattenError(result.error).fieldErrors`) → akses Supabase → `revalidatePath()` / `redirect()` bila perlu → return `ActionResult` (`lib/types.ts`).
-3. Hook memakai `formState.isSubmitting` untuk loading, memasang `fieldErrors` lewat `setError`, menampilkan `message` di atas form, dan memanggil `queryClient.invalidateQueries({ queryKey: ["<modul>"] })` setelah berhasil.
+3. Hook memanggil action dari `handleSubmit`:
+   - Status loading memakai `formState.isSubmitting`.
+   - `fieldErrors` dipasang ke field lewat `setError`, sedangkan `message` dipasang ke `setError("root", ...)` dan ditampilkan di atas form.
+   - Bila action melakukan `redirect()`, hasil `await action()` di client tidak bisa diandalkan. Karena itu cek dengan `if (!result || result.success) return;`.
+   - `redirect()` di dalam action harus berada di luar `try/catch`.
+   - Setelah action berhasil, panggil `queryClient.invalidateQueries({ queryKey: ["<modul>"] })`.
 
 ### Membaca data
 
@@ -90,9 +108,15 @@ Pemetaan `transaction_status` → `payment_status`: `settlement` / `capture` (de
 
 ### Auth dan layout
 
-- `proxy.ts` donatur **hanya** me-refresh session. Tidak ada redirect global ke login (berbeda dengan office), karena hampir semua halaman publik. Proteksi dilakukan per halaman di `/akun/*`.
-- Layout mobile-first: konten `max-w-md` di tengah, latar luar abu-abu muda di desktop, header (logo + "Sobat Baik Nusantara"), dan Bottom Navigation fixed dengan 4 item: Beranda (`/`), Blog (`/blog`), Riwayat (`/akun/riwayat`), Akun (`/akun`). Item aktif memakai warna `--primary` (lewat `usePathname`). Konten diberi `padding-bottom` agar tidak tertutup navigasi.
-- Metadata root: title template `%s | Sobat Baik Nusantara`, `<html lang="id">`, `metadataBase` dari `NEXT_PUBLIC_SITE_URL`.
+- `proxy.ts` donatur **hanya** me-refresh session (`getClaims()`). Tidak ada redirect global ke login (berbeda dengan office), karena hampir semua halaman publik. Proteksi dilakukan per halaman di `/akun/*`, di server component dalam `<Suspense>` yang memanggil `getCurrentUser()` (setara `AdminGate` di office).
+- Layout mobile-first dipasang di root `app/layout.tsx`, sehingga semua halaman mendapat header dan Bottom Navigation:
+  - konten `max-w-md` di tengah, latar luar `bg-muted` mulai breakpoint `md`;
+  - Bottom Navigation fixed dengan 4 item: Beranda (`/`), Blog (`/blog`), Riwayat (`/akun/riwayat`), Akun (`/akun`);
+  - item aktif berwarna `--primary`, dipilih oleh `getActiveHref()` (href terpanjang yang cocok), sehingga `/akun/riwayat` tidak ikut mengaktifkan Akun;
+  - `<main>` diberi `pb-20` agar konten tidak tertutup navigasi (`h-16`).
+
+  Bila nanti ada halaman yang tidak boleh menampilkan navigasi (contoh: login atau formulir donasi), pindahkan layout ini ke route group.
+- Metadata root: title `{ default: "Sobat Baik Nusantara", template: "%s | Sobat Baik Nusantara" }`, `<html lang="id">`, `metadataBase` dari `NEXT_PUBLIC_SITE_URL` (fallback `http://localhost:3000`).
 
 ### Konvensi lain
 
