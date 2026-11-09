@@ -10,9 +10,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - `../sbn-office`: panel admin. Ini **implementasi acuan**: pola kode donatur disamakan dengan office, jadi lihat file di sana sebelum membuat yang setara di sini (`lib/supabase/*`, `lib/types.ts`, `lib/utils.ts`, `app/providers.tsx`, `containers/auth/login/`).
 - `../sbn-supabase`: migration, RLS, storage bucket, dan generate types. Skema database diubah di sana, bukan di sini. `npm run db:types` di repo itu menulis ulang `lib/supabase/database.types.ts` di kedua app, jadi file ini jangan diedit manual.
-- `../../planning/init.md`: spesifikasi utama (routes, data model, RLS, alur Midtrans, design pattern). `../../planning/001-fondasi.md`: backlog fondasi; task khusus donatur adalah `FND014` (samakan fondasi dengan office) dan `FND015` (layout + bottom navigation). Baca dokumen ini sebelum mengerjakan fitur.
+- `../../planning/init.md`: spesifikasi utama (routes, data model, RLS, alur Midtrans, design pattern). `../../planning/001-fondasi.md`: backlog fondasi; task khusus donatur adalah `FND014` (samakan fondasi dengan office) dan `FND015` (layout + bottom navigation). `../../planning/002-campaign.md`: backlog campaign; task donatur adalah `CMP007`–`CMP012`. Baca dokumen ini sebelum mengerjakan fitur.
 
-Saat ini app masih skeleton create-next-app. Yang sudah ada hanya `lib/utils.ts` (re-export `cn`) dan `lib/supabase/database.types.ts`. Yang **belum ada**: `zod`, `react-hook-form`, `@hookform/resolvers` (belum terpasang; versinya harus sama dengan office), `lib/supabase/{client,server,admin,proxy}.ts`, `lib/types.ts`, `formatRupiah()`, `app/providers.tsx`, `proxy.ts`, `containers/`, `components/ui/`. Metadata di `app/layout.tsx` masih bawaan.
+Fondasi sudah selesai: Supabase client, `proxy.ts` (refresh session), `lib/auth.ts`, `app/providers.tsx` (Tanstack Query + `<Toaster />`), serta layout mobile-first dengan header dan Bottom Navigation (`components/layout/`). Modul campaign ada di `containers/home/` (daftar campaign di beranda) dan `containers/campaign/detail/` (`/campaign/[slug]`). Halaman lain (formulir donasi, status pembayaran, blog, akun, S&K, tentang) belum ada.
 
 Route yang direncanakan:
 
@@ -47,7 +47,10 @@ Belum ada test runner.
 - `middleware.ts` sudah diganti `proxy.ts`. Rujukan: `node_modules/next/dist/docs/01-app/01-getting-started/16-proxy.md`.
 - `LayoutProps<"/">` / `PageProps` adalah tipe global hasil typegen Next, jadi tidak perlu di-import.
 - Tailwind v4 dimuat lewat loader `@tailwindcss/turbopack` di `next.config.ts`. Tidak ada `tailwind.config` maupun PostCSS config; token tema ada di `app/globals.css`.
-- Komponen shadcn memakai style `base-nova`, yang dibangun di atas `@base-ui/react` (bukan Radix). `cn` berasal dari package npm `cn` (pengganti clsx + tailwind-merge), dan `lib/utils.ts` hanya me-re-export-nya.
+- Komponen shadcn memakai style `base-nova`, yang dibangun di atas `@base-ui/react` (bukan Radix). Komposisi elemen memakai prop `render` (contoh: `<Button nativeButton={false} render={<Link href="/" />}>`), bukan `asChild`. `cn` berasal dari package npm `cn` (pengganti clsx + tailwind-merge), dan `lib/utils.ts` hanya me-re-export-nya.
+- `new Date()` / `Date.now()` saat prerender membuat build gagal. Panggil hanya di server component setelah akses data request (cookies/params), atau di client component yang baru dirender setelah data selesai di-fetch (contoh: `CampaignProgress`, `DonationList`).
+- `notFound()` di halaman yang punya `loading.tsx` dikirim setelah streaming dimulai, sehingga status HTTP tetap 200 dengan meta `noindex` (soft 404). Ini disengaja untuk `/campaign/[slug]`.
+- `next/image`: prop `priority` sudah deprecated, pakai `preload` (gambar LCP di server component) atau `loading="eager"`.
 
 ## Arsitektur
 
@@ -57,6 +60,9 @@ Belum ada test runner.
 - `containers/<modul>/<halaman>/` berisi `<Nama>.tsx` (named export, di-re-export lewat `index.ts`), `<Nama>.types.ts` (schema zod + type `z.infer`), `actions.ts` (`"use server"`), `components/`, dan `hooks/use<Nama>.ts` (react-hook-form, pemanggilan action, query).
 - `lib/supabase/`: `client.ts` (browser, hanya untuk membaca), `server.ts` (session user, RLS berlaku), `admin.ts` (service role, `import "server-only"`), `proxy.ts` (`updateSession()` untuk `proxy.ts` root).
 - `lib/auth.ts` di donatur cukup berisi `getCurrentUser()`. **Jangan** salin `requireAdmin()` dari office.
+- Helper bersama: `lib/utils.ts` (`cn`, `formatRupiah()`), `lib/campaign.ts` (`getProgressPercent()` sama dengan office, plus `getRemainingDays()`, `isCampaignEnded()`, `formatRemainingDays()`, `getCampaignUrl()`), `lib/date.ts` (`formatRelativeTime()`), dan `hooks/use-debounced-value.ts` (sama dengan office).
+- Komponen yang dipakai lebih dari satu container ditaruh di `components/<modul>/` (contoh: `components/campaign/CampaignProgress.tsx`). Komponen internal container memakai default export.
+- Fungsi baca data di server (Server Component dan `generateMetadata`) ditaruh di `containers/<modul>/<halaman>/queries.ts` (`import "server-only"`, dibungkus `React.cache()`), contoh `getCampaignBySlug()`. Data campaign tidak memakai `use cache` karena dana terkumpul harus selalu terbaru.
 
 ### Mutasi data: Server Action + Zod
 
@@ -69,8 +75,8 @@ Semua perubahan data (termasuk login/daftar/logout) dilakukan lewat Server Actio
 ### Membaca data
 
 - Halaman publik yang butuh SEO (detail campaign, detail blog, S&K, tentang): Server Component + `lib/supabase/server.ts`, dengan `generateMetadata` (Open Graph: judul, `description`, `cover`).
-- Daftar dengan pagination/filter/pencarian (campaign, blog, riwayat): Tanstack Query (`useQuery` + `placeholderData: keepPreviousData`) dengan `lib/supabase/client.ts`, `.range()`, dan `{ count: "exact" }`. Query key: `["<modul>", { ...params }]`.
-- Progres campaign dibaca dari view `campaign_progress` (`collected_amount`, `donor_count`). Daftar donasi masuk dibaca dari view `public_donations` (sudah berisi "Anonim" dan tanpa email/no. HP). Publik tidak bisa membaca tabel `transactions` secara langsung.
+- Daftar dengan pagination/filter/pencarian (campaign, blog, riwayat): Tanstack Query (`useQuery` + `placeholderData: keepPreviousData`) dengan `lib/supabase/client.ts`, `.range()`, dan `{ count: "exact" }`. Query key: `["<modul>", { ...params }]`. Daftar dengan tombol "Muat lebih banyak" (beranda, donasi masuk) memakai `useInfiniteQuery`.
+- Progres campaign dibaca dari view `campaign_progress` (`collected_amount`, `donor_count`) dengan query kedua (`.in("campaigns_id", ids)`), bukan embed PostgREST, karena relasi ke view tidak terdeteksi. Query campaign tetap memakai `.eq("status", "PUBLISH")` walau RLS sudah membatasi. Daftar donasi masuk dibaca dari view `public_donations` (sudah berisi "Anonim" dan tanpa email/no. HP). Publik tidak bisa membaca tabel `transactions` secara langsung.
 - Riwayat donasi hanya mencakup transaksi dengan `users_id = auth.uid()`, yaitu donasi yang dibuat saat login. Donasi tanpa login tidak digabungkan ke akun.
 
 ### Alur donasi (Midtrans Snap)
