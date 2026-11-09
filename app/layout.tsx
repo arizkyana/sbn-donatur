@@ -1,6 +1,12 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Inter } from "next/font/google";
+import { Suspense } from "react";
 import "./globals.css";
+import {
+  ActiveBottomNavigation,
+  BottomNavigation,
+  Header,
+} from "@/components/layout";
 import { cn } from "@/lib/utils";
 import { Providers } from "./providers";
 
@@ -41,8 +47,17 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         inter.variable,
       )}
     >
-      <body className="min-h-full flex flex-col">
-        <Providers>{children}</Providers>
+      <body className="min-h-full bg-background md:bg-muted">
+        <Providers>
+          <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col bg-background md:shadow-sm">
+            <Header />
+            {/* pb-20: ruang untuk Bottom Navigation (h-16) agar konten tidak tertutup. */}
+            <main className="flex-1 pb-20">{children}</main>
+            <Suspense fallback={<BottomNavigation activeHref={null} />}>
+              <ActiveBottomNavigation />
+            </Suspense>
+          </div>
+        </Providers>
       </body>
     </html>
   );
