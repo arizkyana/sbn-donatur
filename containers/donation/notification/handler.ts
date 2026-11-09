@@ -1,6 +1,8 @@
 import "server-only";
 
+import { after } from "next/server";
 import { z } from "zod";
+import { sendDonationReceipt } from "@/lib/email/send";
 import { getPaidAt, mapPaymentStatus, verifySignature } from "@/lib/midtrans";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Json } from "@/lib/supabase/database.types";
@@ -72,7 +74,6 @@ export async function handleMidtransNotification(request: Request) {
 
   // Idempoten: hanya transaksi yang masih PENDING yang berubah, jadi transaksi final
   // (SUCCESS, FAILED, EXPIRED) aman dari notifikasi yang datang berkali-kali.
-  // Hanya request dengan `updated` tidak null yang boleh mengirim email bukti donasi (DON007).
   const { data: updated, error: updateError } = await admin
     .from("transactions")
     .update({
@@ -89,6 +90,13 @@ export async function handleMidtransNotification(request: Request) {
     .select("id, payment_status")
     .maybeSingle();
   if (updateError) throw updateError;
+
+  // Hanya request yang benar-benar mengubah baris menjadi SUCCESS yang mengirim email.
+  // after(): dikirim setelah respons, agar Midtrans tidak menunggu lalu mengirim ulang
+  // karena timeout.
+  if (updated?.payment_status === "SUCCESS") {
+    after(() => sendDonationReceipt(updated.id));
+  }
 
   return Response.json({ updated: updated !== null });
 }

@@ -9,10 +9,10 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatDateTime } from "@/lib/date";
+import { getPaymentMethodLabel } from "@/lib/payment-method";
 import type { Enums } from "@/lib/supabase/database.types";
 import { cn, formatRupiah } from "@/lib/utils";
 import AutoRefresh from "./components/AutoRefresh";
-import { getPaymentMethodLabel } from "./payment-method";
 import { getDonationByOrderId } from "./queries";
 
 const STATUS_HEADERS: Record<
@@ -23,7 +23,7 @@ const STATUS_HEADERS: Record<
     icon: CircleCheckIcon,
     iconClassName: "text-primary",
     title: "Terima kasih, donasi Anda berhasil",
-    description: "Donasi Anda sudah kami terima.",
+    description: "Bukti donasi telah dikirim ke email Anda.",
   },
   PENDING: {
     icon: ClockIcon,
