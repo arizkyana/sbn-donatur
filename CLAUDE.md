@@ -31,7 +31,7 @@ Route yang direncanakan:
 ## Perintah
 
 ```bash
-npm run dev            # dev server (Turbopack) di http://localhost:3000
+npm run dev            # dev server (Turbopack) di http://localhost:3002 (port 3000 dipakai sbn-office)
 npm run build          # production build
 npm run lint           # ESLint (flat config) untuk seluruh project
 npx eslint <path>      # lint satu file
@@ -72,7 +72,7 @@ Belum ada test runner. Setelah memindah atau menghapus route, `npx tsc --noEmit`
   - `admin.ts` (service role, `import "server-only"`, hanya untuk insert/update `transactions`);
   - `proxy.ts` (`updateSession()` untuk `proxy.ts` root);
   - `database.types.ts` (hasil generate).
-- `lib/midtrans.ts` (`server-only`): integrasi Midtrans lewat `fetch` tanpa SDK. Isinya `ORDER_ID_PATTERN`, `generateOrderId(now)`, `createSnapTransaction()`, `verifySignature()`, `mapPaymentStatus()`, dan `getPaidAt(settlementTime, now)`. `MIDTRANS_SERVER_KEY` hanya boleh dibaca di file ini.
+- `lib/midtrans.ts` (`server-only`): integrasi Midtrans lewat `fetch` tanpa SDK. Isinya `ORDER_ID_PATTERN`, `generateOrderId(now)`, `createSnapTransaction()`, `verifySignature()`, `mapPaymentStatus()`, dan `getPaidAt(settlementTime, now)`. `MIDTRANS_SERVER_KEY` hanya boleh dibaca di file ini. Snap dikirim dengan header `X-Override-Notification` ke `${NEXT_PUBLIC_SITE_URL}/api/midtrans/notification`, jadi `NEXT_PUBLIC_SITE_URL` harus sama dengan URL publik donatur (lokal `http://localhost:3002`; uji webhook asli lewat tunnel ngrok, lihat README).
 - `lib/auth.ts` cukup berisi `getCurrentUser()`, dibungkus `React.cache()`. Hasilnya `CurrentUser` (termasuk `phone` untuk mengisi formulir donasi) atau `null` bila tidak login. Pemanggilnya wajib berada di dalam `<Suspense>`. **Jangan** salin `requireAdmin()` dari office.
 - Helper bersama: `lib/utils.ts` (`cn`, `formatRupiah()`), `lib/campaign.ts` (`getProgressPercent()` sama dengan office, plus `getRemainingDays()`, `isCampaignEnded()`, `formatRemainingDays()`, `getCampaignUrl()`), `lib/date.ts` (`formatRelativeTime()`, `formatDateTime()` dalam WIB), dan `hooks/use-debounced-value.ts` (sama dengan office).
 - Komponen yang dipakai lebih dari satu container ditaruh di `components/<modul>/` (contoh: `components/campaign/CampaignProgress.tsx`). Komponen internal container memakai default export.
