@@ -30,3 +30,14 @@ export function getSafeNextPath(value: string | null | undefined) {
   if (url.pathname.startsWith("//")) return DEFAULT_AFTER_LOGIN;
   return `${url.pathname}${url.search}${url.hash}`;
 }
+
+/**
+ * URL absolut /auth/confirm untuk `emailRedirectTo`/`redirectTo` Supabase Auth.
+ * Template email menambahkan `?token_hash=…`, jadi URL ini tidak boleh punya query.
+ */
+export function getAuthConfirmUrl() {
+  return new URL(
+    "/auth/confirm",
+    process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3002",
+  ).toString();
+}
