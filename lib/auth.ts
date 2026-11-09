@@ -1,6 +1,7 @@
 import "server-only";
 
 import { cache } from "react";
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { Enums } from "@/lib/supabase/database.types";
 
@@ -38,3 +39,18 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
     isActive: profile.is_active,
   };
 });
+
+/**
+ * Halaman dan aksi /akun/*: donatur wajib login dan aktif. Pemanggil halaman
+ * wajib berada di dalam <Suspense>.
+ *
+ * Akun nonaktif tidak di-signOut() di sini karena cookie tidak bisa ditulis dari
+ * Server Component (dan render bisa terjadi saat prefetch). Session-nya berakhir
+ * sendiri setelah di-ban (refresh ditolak), dan login berikutnya ditolak.
+ */
+export async function requireDonatur(next: string) {
+  const user = await getCurrentUser();
+  if (!user) redirect(`/login?next=${encodeURIComponent(next)}`);
+  if (!user.isActive) redirect("/login?error=nonaktif");
+  return user;
+}
