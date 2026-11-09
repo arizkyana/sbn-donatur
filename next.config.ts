@@ -12,6 +12,9 @@ const nextConfig: NextConfig = {
       ),
     ],
   },
+  // Dev server boleh diakses lewat tunnel ngrok, contoh untuk membuka link email
+  // atau halaman status dari HP saat menguji webhook Midtrans di lokal.
+  allowedDevOrigins: ["*.ngrok-free.app", "*.ngrok-free.dev"],
   cacheComponents: true,
   partialPrefetching: true,
   turbopack: {

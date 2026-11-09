@@ -3,14 +3,25 @@ import "server-only";
 import { createHash, randomInt, timingSafeEqual } from "node:crypto";
 import type { Enums } from "@/lib/supabase/database.types";
 
-// Integrasi Midtrans lewat REST API (fetch), tanpa SDK. Core API (cek status)
-// baru dibutuhkan di office pada backlog 004-transaksi.
-const SNAP_BASE_URL =
-  process.env.MIDTRANS_IS_PRODUCTION === "true"
-    ? "https://app.midtrans.com"
-    : "https://app.sandbox.midtrans.com";
+// Integrasi Midtrans lewat REST API (fetch), tanpa SDK. Snap untuk membuat
+// transaksi, Core API untuk membaca status saat memverifikasi webhook.
+const IS_PRODUCTION = process.env.MIDTRANS_IS_PRODUCTION === "true";
+const SNAP_BASE_URL = IS_PRODUCTION
+  ? "https://app.midtrans.com"
+  : "https://app.sandbox.midtrans.com";
+const CORE_BASE_URL = IS_PRODUCTION
+  ? "https://api.midtrans.com"
+  : "https://api.sandbox.midtrans.com";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+
+// Webhook DON005. Dikirim per transaksi lewat header X-Override-Notification, jadi
+// notifikasi selalu kembali ke deployment yang membuat transaksi (lokal lewat tunnel,
+// staging, production) dan tidak bergantung pada Notification URL di dashboard.
+const NOTIFICATION_URL = new URL(
+  "/api/midtrans/notification",
+  SITE_URL,
+).toString();
 
 /** Format `generateOrderId()`, contoh `SBN-20261109-7K2QX9AB`. */
 export const ORDER_ID_PATTERN = /^SBN-\d{8}-[A-Z0-9]{8}$/;
@@ -29,6 +40,14 @@ function getServerKey() {
   const serverKey = process.env.MIDTRANS_SERVER_KEY;
   if (!serverKey) throw new Error("MIDTRANS_SERVER_KEY belum diatur");
   return serverKey;
+}
+
+function getAuthHeaders() {
+  return {
+    Authorization: `Basic ${Buffer.from(`${getServerKey()}:`).toString("base64")}`,
+    "Content-Type": "application/json",
+    Accept: "application/json",
+  };
 }
 
 /**
@@ -61,9 +80,8 @@ export async function createSnapTransaction({
   const response = await fetch(`${SNAP_BASE_URL}/snap/v1/transactions`, {
     method: "POST",
     headers: {
-      Authorization: `Basic ${Buffer.from(`${getServerKey()}:`).toString("base64")}`,
-      "Content-Type": "application/json",
-      Accept: "application/json",
+      ...getAuthHeaders(),
+      "X-Override-Notification": NOTIFICATION_URL,
     },
     body: JSON.stringify({
       transaction_details: { order_id: orderId, gross_amount: amount },
@@ -102,6 +120,41 @@ export async function createSnapTransaction({
   return { token: data.token, redirectUrl: data.redirect_url };
 }
 
+/** Respons GET status Core API (field yang dipakai webhook). */
+export type MidtransTransactionStatus = {
+  order_id: string;
+  status_code: string;
+  transaction_status: string;
+  fraud_status?: string;
+  gross_amount: string;
+  payment_type?: string;
+  settlement_time?: string;
+};
+
+/**
+ * Status transaksi langsung dari Midtrans. Dipakai webhook untuk memverifikasi
+ * notifikasi: respons ini diautentikasi dengan server key kita, jadi tidak bisa
+ * dipalsukan pengirim notifikasi. `null` bila Midtrans tidak mengenal order_id.
+ */
+export async function getTransactionStatus(orderId: string) {
+  const response = await fetch(
+    `${CORE_BASE_URL}/v2/${encodeURIComponent(orderId)}/status`,
+    { headers: getAuthHeaders() },
+  );
+  if (!response.ok) {
+    console.error(
+      `Midtrans GET status gagal (${response.status}) untuk ${orderId}:`,
+      await response.text(),
+    );
+    throw new Error(`Midtrans GET status gagal dengan status ${response.status}`);
+  }
+
+  const data = (await response.json()) as MidtransTransactionStatus;
+  // Transaksi tidak ditemukan tetap dibalas HTTP 200, dengan status_code "404".
+  if (data.status_code === "404") return null;
+  return data;
+}
+
 type SignedNotification = {
   order_id: string;
   status_code: string;
@@ -112,6 +165,10 @@ type SignedNotification = {
 /**
  * Verifikasi `signature_key` notifikasi Midtrans. `gross_amount` dipakai persis
  * seperti string yang dikirim Midtrans (contoh `"50000.00"`).
+ *
+ * Tidak dipakai webhook: di akun Midtrans ini notifikasi ditandatangani dengan key
+ * yang berbeda dari MIDTRANS_SERVER_KEY (signature tidak pernah cocok, juga setelah
+ * server key dirotasi), jadi webhook memverifikasi lewat `getTransactionStatus()`.
  */
 export function verifySignature(notification: SignedNotification) {
   const expected = Buffer.from(
