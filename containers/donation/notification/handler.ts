@@ -49,6 +49,8 @@ export async function handleMidtransNotification(request: Request) {
   }
   const notification = parsed.data;
 
+  console.log("handleMidtransNotification: ", notification);
+
   // Dicek sebelum memanggil Midtrans, agar order_id asing tidak memicu request keluar.
   const admin = createAdminClient();
   const { data: transaction, error } = await admin
