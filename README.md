@@ -44,7 +44,7 @@ Ditulis di `.env.local` (tidak di-commit). Rujukan lengkap ada di tabel Environm
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Publishable key Supabase |
 | `SUPABASE_SERVICE_ROLE_KEY` | Hanya di server. Untuk insert/update transaksi donasi |
 | `MIDTRANS_SERVER_KEY` | Hanya di server. Untuk membuat Snap token dan memverifikasi notifikasi Midtrans |
-| `NEXT_PUBLIC_MIDTRANS_CLIENT_KEY` | Client key Midtrans Snap |
+| `NEXT_PUBLIC_MIDTRANS_CLIENT_KEY` | Client key Midtrans Snap. Belum dipakai: pembayaran memakai redirect Snap, bukan popup Snap.js |
 | `MIDTRANS_IS_PRODUCTION` | `false` sampai go-live |
 | `RESEND_API_KEY` | Hanya di server. Untuk email bukti donasi |
 | `NEXT_PUBLIC_SITE_URL` | URL publik aplikasi, untuk link di email dan Open Graph. Lokal: `http://localhost:3000` |
