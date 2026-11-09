@@ -14,16 +14,24 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { formatRupiah } from "@/lib/utils";
-import useDonationForm from "../hooks/useDonationForm";
+import useDonationForm, { type DonorDefaults } from "../hooks/useDonationForm";
 import AmountPicker from "./AmountPicker";
 
-export default function DonationFormFields({ slug }: { slug: string }) {
+type DonationFormFieldsProps = {
+  slug: string;
+  donor: DonorDefaults | null;
+};
+
+export default function DonationFormFields({
+  slug,
+  donor,
+}: DonationFormFieldsProps) {
   const {
     control,
     handleSubmit,
     onSubmit,
     formState: { errors, isSubmitting, isSubmitSuccessful },
-  } = useDonationForm(slug);
+  } = useDonationForm(slug, donor);
   const amount = useWatch({ control, name: "amount" });
   // Tetap disabled setelah berhasil, selama browser berpindah ke Midtrans,
   // agar klik berulang tidak membuat transaksi ganda.

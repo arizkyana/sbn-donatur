@@ -47,6 +47,7 @@ Ditulis di `.env.local` (tidak di-commit). Rujukan lengkap ada di tabel Environm
 | `NEXT_PUBLIC_MIDTRANS_CLIENT_KEY` | Client key Midtrans Snap. Belum dipakai: pembayaran memakai redirect Snap, bukan popup Snap.js |
 | `MIDTRANS_IS_PRODUCTION` | `false` sampai go-live |
 | `RESEND_API_KEY` | Hanya di server. Untuk email bukti donasi |
+| `EMAIL_FROM` | Pengirim email bukti donasi, contoh `Sobat Baik Nusantara <donasi@sobatbaik.org>`. Sebelum domain terverifikasi di Resend, pakai `onboarding@resend.dev` (hanya bisa mengirim ke email pemilik akun Resend) |
 | `NEXT_PUBLIC_SITE_URL` | URL publik aplikasi, untuk link di email dan Open Graph. Lokal: `http://localhost:3000` |
 
 Variabel berawalan `NEXT_PUBLIC_` ditanam ke kode saat `npm run build`. Bila nilainya berubah, build ulang aplikasinya.

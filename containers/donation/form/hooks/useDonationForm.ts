@@ -4,14 +4,23 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { createDonation } from "../actions";
 import { donationSchema, type DonationInput } from "../DonationForm.types";
 
-export default function useDonationForm(slug: string) {
+/** Data donatur dari profil, untuk isi awal form saat login. */
+export type DonorDefaults = Pick<
+  DonationInput,
+  "donor_name" | "donor_email" | "donor_phone"
+>;
+
+export default function useDonationForm(
+  slug: string,
+  donor: DonorDefaults | null,
+) {
   const form = useForm<DonationInput>({
     defaultValues: {
       slug,
       amount: undefined,
-      donor_name: "",
-      donor_email: "",
-      donor_phone: "",
+      donor_name: donor?.donor_name ?? "",
+      donor_email: donor?.donor_email ?? "",
+      donor_phone: donor?.donor_phone ?? "",
       is_anonymous: false,
     },
     resolver: zodResolver(donationSchema),
