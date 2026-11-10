@@ -10,7 +10,7 @@ export function BottomNavigation({ activeHref }: BottomNavigationProps) {
   return (
     <nav
       aria-label="Navigasi utama"
-      className="fixed inset-x-0 bottom-0 z-10 mx-auto max-w-md border-t bg-background"
+      className="fixed inset-x-0 bottom-0 z-20 mx-auto max-w-md rounded-t-2xl bg-card pb-[env(safe-area-inset-bottom)] shadow-bar"
     >
       <ul className="grid h-16 grid-cols-4">
         {NAV_ITEMS.map((item) => {
@@ -22,11 +22,19 @@ export function BottomNavigation({ activeHref }: BottomNavigationProps) {
                 href={item.href}
                 aria-current={isActive ? "page" : undefined}
                 className={cn(
-                  "flex h-full flex-col items-center justify-center gap-1 text-xs text-muted-foreground transition-colors",
-                  isActive && "font-medium text-primary",
+                  "flex h-full flex-col items-center justify-center gap-0.5 text-[13px] font-medium text-muted-foreground transition-colors",
+                  isActive && "font-semibold text-primary",
                 )}
               >
-                <item.icon className="size-5" />
+                {/* Pill di belakang ikon menandai menu yang sedang dibuka. */}
+                <span
+                  className={cn(
+                    "flex h-8 w-14 items-center justify-center rounded-full transition-colors",
+                    isActive && "bg-primary/10",
+                  )}
+                >
+                  <item.icon className="size-6" />
+                </span>
                 {item.title}
               </Link>
             </li>

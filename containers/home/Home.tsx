@@ -1,18 +1,18 @@
 "use client";
 
 import { useState } from "react";
+import { HeartHandshakeIcon, TriangleAlertIcon } from "lucide-react";
+import { EmptyState } from "@/components/feedback/EmptyState";
 import { Button } from "@/components/ui/button";
-import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { cn } from "@/lib/utils";
-import CampaignCard from "./components/CampaignCard";
-import CampaignCardSkeleton from "./components/CampaignCardSkeleton";
+import { CampaignCard } from "@/components/campaign/CampaignCard";
+import { CampaignCardSkeleton } from "@/components/campaign/CampaignCardSkeleton";
+import { type CampaignSort, useCampaigns } from "@/hooks/use-campaigns";
 import CampaignFilters from "./components/CampaignFilters";
-import useCampaigns, { type CampaignSort } from "./hooks/useCampaigns";
+import WelcomeBanner from "./components/WelcomeBanner";
 
 export function Home() {
-  const [search, setSearch] = useState("");
   const [sort, setSort] = useState<CampaignSort>("newest");
-  const debouncedSearch = useDebouncedValue(search.trim());
 
   const {
     data,
@@ -24,7 +24,7 @@ export function Home() {
     hasNextPage,
     fetchNextPage,
     isFetchingNextPage,
-  } = useCampaigns({ search: debouncedSearch, sort });
+  } = useCampaigns({ search: "", sort });
 
   const renderContent = () => {
     if (isPending) {
@@ -39,31 +39,35 @@ export function Home() {
 
     if (isError) {
       return (
-        <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed p-10 text-center">
-          <p className="text-sm text-muted-foreground">
-            Daftar campaign gagal dimuat.
-          </p>
-          <Button
-            variant="outline"
-            disabled={isRefetching}
-            onClick={() => refetch()}
-          >
-            Coba lagi
-          </Button>
-        </div>
+        <EmptyState
+          icon={TriangleAlertIcon}
+          title="Daftar campaign gagal dimuat"
+          description="Periksa koneksi internet, lalu coba lagi."
+          action={
+            <Button
+              variant="outline"
+              disabled={isRefetching}
+              onClick={() => refetch()}
+            >
+              Coba lagi
+            </Button>
+          }
+        />
       );
     }
 
     const campaigns = data.pages.flatMap((page) => page.rows);
     if (campaigns.length === 0) {
       return (
-        <div className="rounded-lg border border-dashed p-10 text-center">
-          <p className="text-sm text-muted-foreground">
-            {debouncedSearch
-              ? "Campaign tidak ditemukan"
-              : "Belum ada campaign"}
-          </p>
-        </div>
+        <EmptyState
+          icon={HeartHandshakeIcon}
+          title={
+            sort === "ending"
+              ? "Belum ada campaign yang segera berakhir"
+              : "Belum ada campaign"
+          }
+          description="Campaign kebaikan baru akan tampil di sini."
+        />
       );
     }
 
@@ -97,15 +101,20 @@ export function Home() {
   };
 
   return (
-    <section className="flex flex-col gap-4 p-4">
-      <h1 className="sr-only">Daftar campaign</h1>
-      <CampaignFilters
-        search={search}
-        sort={sort}
-        onSearchChange={setSearch}
-        onSortChange={setSort}
-      />
-      {renderContent()}
-    </section>
+    <div className="flex flex-col">
+      <WelcomeBanner />
+      <section
+        aria-labelledby="campaign-list-heading"
+        className="flex flex-col gap-4 p-4 pt-6"
+      >
+        <div className="flex flex-col gap-3">
+          <h2 id="campaign-list-heading" className="text-lg font-bold">
+            Campaign Kebaikan
+          </h2>
+          <CampaignFilters sort={sort} onSortChange={setSort} />
+        </div>
+        {renderContent()}
+      </section>
+    </div>
   );
 }

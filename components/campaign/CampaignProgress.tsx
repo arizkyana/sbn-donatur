@@ -15,7 +15,7 @@ type CampaignProgressProps = {
   className?: string;
 };
 
-// Dipakai di kartu beranda (client) dan halaman detail (server), jadi tanpa hook.
+// Dipakai di kartu campaign (client) dan halaman detail (server), jadi tanpa hook.
 export function CampaignProgress({
   collectedAmount,
   targetBudget,
@@ -30,33 +30,36 @@ export function CampaignProgress({
 
   return (
     <div className={cn("flex flex-col gap-2", className)}>
-      <div className="flex flex-col gap-0.5">
-        <p className="text-sm text-muted-foreground">
-          Terkumpul{" "}
-          <span className="font-semibold text-primary">
+      <div className="flex items-end justify-between gap-2">
+        <div className="flex flex-col">
+          <span className="text-sm text-muted-foreground">Terkumpul</span>
+          <span className="text-lg leading-tight font-bold text-primary">
             {formatRupiah(collectedAmount)}
           </span>
-        </p>
-        {targetBudget && (
-          <p className="text-xs text-muted-foreground">
-            dari target {formatRupiah(targetBudget)}
-          </p>
+        </div>
+        {percent !== null && (
+          <span className="text-sm font-semibold">{percent}%</span>
         )}
       </div>
       {percent !== null && (
         <Progress
           value={percent}
           aria-label="Progres donasi"
-          className="**:data-[slot=progress-indicator]:bg-brand-gold **:data-[slot=progress-track]:h-1.5"
+          className="**:data-[slot=progress-indicator]:origin-left **:data-[slot=progress-indicator]:bg-brand-gold motion-safe:**:data-[slot=progress-indicator]:animate-progress-grow"
         />
       )}
-      <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
-        <span className="flex items-center gap-1">
-          <UsersIcon className="size-3.5" />
+      {targetBudget && (
+        <p className="text-sm text-muted-foreground">
+          dari target {formatRupiah(targetBudget)}
+        </p>
+      )}
+      <div className="flex items-center justify-between gap-2 text-sm text-muted-foreground">
+        <span className="flex items-center gap-1.5">
+          <UsersIcon className="size-4" />
           {donorCount} donatur
         </span>
-        <span className="flex items-center gap-1">
-          <ClockIcon className="size-3.5" />
+        <span className="flex items-center gap-1.5">
+          <ClockIcon className="size-4" />
           {formatRemainingDays(remainingDays)}
         </span>
       </div>

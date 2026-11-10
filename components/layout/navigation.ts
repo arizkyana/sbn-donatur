@@ -26,9 +26,11 @@ export function isActivePath(pathname: string, href: string) {
 }
 
 // Pilih href terpanjang yang cocok, agar /akun/riwayat tidak ikut mengaktifkan Akun.
+// Halaman pencarian dianggap bagian dari Beranda.
 export function getActiveHref(pathname: string) {
+  const path = isActivePath(pathname, "/cari") ? "/" : pathname;
   return NAV_ITEMS.map((item) => item.href)
-    .filter((href) => isActivePath(pathname, href))
+    .filter((href) => isActivePath(path, href))
     .reduce<string | null>(
       (longest, href) =>
         longest && longest.length >= href.length ? longest : href,
