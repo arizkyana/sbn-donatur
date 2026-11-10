@@ -3,7 +3,7 @@
 import { SearchIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import type { CampaignSort } from "../hooks/useCampaigns";
+import type { CampaignSort } from "@/hooks/use-campaigns";
 
 const sortOptions: { value: CampaignSort; label: string }[] = [
   { value: "newest", label: "Terbaru" },

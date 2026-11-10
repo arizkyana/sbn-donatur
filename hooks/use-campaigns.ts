@@ -88,7 +88,8 @@ export type CampaignListItem = Awaited<
   ReturnType<typeof fetchCampaigns>
 >["rows"][number];
 
-export default function useCampaigns(params: CampaignListParams) {
+// Dipakai beranda dan halaman pencarian.
+export function useCampaigns(params: CampaignListParams) {
   return useInfiniteQuery({
     queryKey: ["campaigns", params],
     queryFn: ({ pageParam }) => fetchCampaigns(params, pageParam),

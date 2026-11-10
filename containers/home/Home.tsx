@@ -4,10 +4,10 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { cn } from "@/lib/utils";
-import CampaignCard from "./components/CampaignCard";
-import CampaignCardSkeleton from "./components/CampaignCardSkeleton";
+import { CampaignCard } from "@/components/campaign/CampaignCard";
+import { CampaignCardSkeleton } from "@/components/campaign/CampaignCardSkeleton";
+import { type CampaignSort, useCampaigns } from "@/hooks/use-campaigns";
 import CampaignFilters from "./components/CampaignFilters";
-import useCampaigns, { type CampaignSort } from "./hooks/useCampaigns";
 
 export function Home() {
   const [search, setSearch] = useState("");
