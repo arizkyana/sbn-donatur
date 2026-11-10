@@ -2,9 +2,7 @@ import "server-only";
 
 import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
-
-// Sama dengan aturan slug di schema campaign sbn-office.
-const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+import { SLUG_PATTERN } from "@/lib/validation";
 
 // cache(): halaman dan generateMetadata cukup satu query per request.
 export const getCampaignBySlug = cache(async (slug: string) => {

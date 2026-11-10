@@ -10,6 +10,8 @@ const nextConfig: NextConfig = {
       new URL(
         `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/**`,
       ),
+      // Thumbnail YouTube untuk post video tanpa cover (blog).
+      new URL("https://i.ytimg.com/vi/**"),
     ],
   },
   // Dev server boleh diakses lewat tunnel ngrok, contoh untuk membuka link email

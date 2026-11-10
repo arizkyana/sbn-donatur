@@ -4,6 +4,9 @@ import { z } from "zod";
 
 const PHONE_PATTERN = /^\+?\d{9,15}$/;
 
+/** Slug campaign dan post: sama dengan aturan slug di schema sbn-office. */
+export const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+
 export const fullNameSchema = z
   .string()
   .trim()

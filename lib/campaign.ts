@@ -1,3 +1,5 @@
+import { getAbsoluteUrl } from "@/lib/utils";
+
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 /**
@@ -38,8 +40,5 @@ export function formatRemainingDays(days: number | null) {
 
 /** URL publik detail campaign, dipakai untuk tombol bagikan. */
 export function getCampaignUrl(slug: string) {
-  return new URL(
-    `/campaign/${slug}`,
-    process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000",
-  ).toString();
+  return getAbsoluteUrl(`/campaign/${slug}`);
 }
