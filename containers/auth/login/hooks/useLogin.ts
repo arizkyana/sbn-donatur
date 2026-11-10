@@ -11,6 +11,8 @@ export default function useLogin() {
   const [unverifiedEmail, setUnverifiedEmail] = useState<string | null>(null);
   const [resendStatus, setResendStatus] = useState<ResendStatus>("idle");
   const [resendError, setResendError] = useState<string | null>(null);
+  // Login ditolak karena akun dinonaktifkan admin (AKN011).
+  const [isInactive, setIsInactive] = useState(false);
 
   const form = useForm<LoginInput>({
     defaultValues: { email: "", password: "" },
@@ -28,6 +30,7 @@ export default function useLogin() {
     setUnverifiedEmail(
       result.code === "email_not_confirmed" ? values.email : null,
     );
+    setIsInactive(result.code === "user_banned");
     setResendStatus("idle");
     setResendError(null);
     Object.entries(result.fieldErrors ?? {}).forEach(([field, messages]) => {
@@ -52,6 +55,7 @@ export default function useLogin() {
     ...form,
     onSubmit,
     unverifiedEmail,
+    isInactive,
     resendStatus,
     resendError,
     onResendVerification,

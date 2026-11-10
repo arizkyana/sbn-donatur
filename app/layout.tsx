@@ -5,6 +5,7 @@ import "./globals.css";
 import {
   ActiveBottomNavigation,
   BottomNavigation,
+  Footer,
   Header,
 } from "@/components/layout";
 import { cn } from "@/lib/utils";

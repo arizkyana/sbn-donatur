@@ -7,13 +7,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { getPostUrl } from "@/lib/blog";
 import { formatDateTime } from "@/lib/date";
+import { hasHtmlContent } from "@/lib/html";
 import { getYouTubeEmbedUrl, getYouTubeId } from "@/lib/youtube";
 import { getPostBySlug } from "./queries";
-
-// Konten kosong dari editor tetap berisi tag (contoh "<p></p>").
-function hasContent(html: string | null): html is string {
-  return Boolean(html?.replace(/<[^>]*>/g, "").trim());
-}
 
 export async function BlogDetail({ slug }: { slug: string }) {
   // DRAFT dan slug yang tidak ada sama-sama 404.
@@ -69,7 +65,7 @@ export async function BlogDetail({ slug }: { slug: string }) {
           </p>
         )}
       </div>
-      {hasContent(post.content) && (
+      {hasHtmlContent(post.content) && (
         <div
           className="prose prose-sm max-w-none border-t p-4 prose-a:text-primary"
           // Konten sudah disanitasi di server saat disimpan dari sbn-office.
