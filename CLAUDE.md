@@ -68,10 +68,11 @@ Belum ada test runner. Setelah memindah atau menghapus route, `npx tsc --noEmit`
 - `app/` hanya untuk routing (`page.tsx`, `layout.tsx`, `route.ts`) dan tidak berisi logika. `page.tsx` cukup me-render container.
 - `containers/<modul>/<halaman>/` berisi `<Nama>.tsx` (named export, di-re-export lewat `index.ts`), `<Nama>.types.ts` (schema zod + type `z.infer`), `actions.ts` (`"use server"`), `components/`, dan `hooks/use<Nama>.ts` (react-hook-form, pemanggilan action, query).
 - `components/layout/`: kerangka halaman donatur.
-  - `Header`: logo, nama "Sobat Baik Nusantara", dan `HeaderSearchButton` ke `/cari` (client, `usePathname()` di dalam `<Suspense>`, disembunyikan di `/cari`).
+  - `Header`: `HeaderBackButton`, logo, nama "Sobat Baik Nusantara", dan `HeaderSearchButton` ke `/cari` (keduanya client, `usePathname()` di dalam `<Suspense>`; tombol cari disembunyikan di `/cari`).
+  - `HeaderBackButton`: tombol panah kembali, tampil hanya di halaman detail yang dikenali `getBackHref()` (`/campaign/[slug]`, `/campaign/[slug]/donasi`, `/donasi/[order_id]`, `/blog/[slug]`). Memakai `hooks/use-back-navigation.ts`: `router.back()` bila donatur sudah berpindah halaman di dalam app, atau ke halaman induk bila halaman dibuka langsung (link yang dibagikan, redirect Midtrans). Bilah cari `/cari` memakai hook yang sama.
   - `BottomNavigation`: komponen presentasional dengan prop `activeHref`. Dipakai juga sebagai fallback `<Suspense>` (tanpa item aktif).
   - `ActiveBottomNavigation`: client component yang membaca `usePathname()`.
-  - `navigation.ts`: `NAV_ITEMS`, `isActivePath()`, dan `getActiveHref()` (`/cari` dianggap Beranda).
+  - `navigation.ts`: `NAV_ITEMS`, `isActivePath()`, `getActiveHref()` (`/cari` dianggap Beranda), dan `getBackHref()`.
   - `Footer`: logo, link Tentang Kami dan Syarat & Ketentuan, serta "© Sobat Baik Nusantara" tanpa tahun (`new Date()` saat prerender membuat build gagal).
   - `FloatingContactButton`: tombol mengambang "Hubungi Kami" (WhatsApp admin, pesan umum) di pojok kanan bawah, di atas Bottom Navigation dan sejajar tepi kanan kolom `max-w-md`. Dirender di root layout di dalam `<Suspense>` karena membaca `getSettings()`, dan disembunyikan di halaman yang punya `data-sticky-bar` (detail campaign sudah punya tombol WhatsApp di `DonateBar`).
 - `lib/supabase/`:
