@@ -1,9 +1,5 @@
-import { Suspense } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { MessageCircleIcon } from "lucide-react";
-import { AdminWhatsAppButton } from "@/components/whatsapp/AdminWhatsAppButton";
-import { whatsappMessage } from "@/lib/whatsapp";
 
 const linkClassName =
   "inline-flex min-h-10 items-center gap-2 self-start text-sm font-medium hover:text-primary hover:underline underline-offset-4";
@@ -30,17 +26,6 @@ export function Footer() {
         <Link href="/syarat-ketentuan" className={linkClassName}>
           Syarat &amp; Ketentuan
         </Link>
-        {/* Membaca nomor admin dari settings; tanpa nomor, link tidak tampil. */}
-        <Suspense fallback={null}>
-          <AdminWhatsAppButton
-            variant="link"
-            message={whatsappMessage.general()}
-            className={linkClassName}
-          >
-            <MessageCircleIcon className="size-4" />
-            Hubungi Kami
-          </AdminWhatsAppButton>
-        </Suspense>
       </nav>
       {/* Tanpa tahun: new Date() saat prerender membuat build gagal (cacheComponents). */}
       <p className="text-xs text-muted-foreground">© Sobat Baik Nusantara</p>
