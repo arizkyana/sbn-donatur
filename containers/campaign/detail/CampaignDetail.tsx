@@ -3,7 +3,9 @@ import { notFound } from "next/navigation";
 import { ImageIcon } from "lucide-react";
 import { CampaignProgress } from "@/components/campaign/CampaignProgress";
 import { isCampaignEnded } from "@/lib/campaign";
+import { RICH_TEXT_CLASS_NAME } from "@/lib/html";
 import { getSettings } from "@/lib/settings";
+import { cn } from "@/lib/utils";
 import DonateBar from "./components/DonateBar";
 import DonationList from "./components/DonationList";
 import { getCampaignBySlug } from "./queries";
@@ -44,7 +46,7 @@ export async function CampaignDetail({ slug }: { slug: string }) {
       </div>
       {campaign.content && (
         <div
-          className="prose prose-sm max-w-none border-t p-4 prose-a:text-primary"
+          className={cn(RICH_TEXT_CLASS_NAME, "border-t p-4")}
           // Konten sudah disanitasi di server saat disimpan dari sbn-office.
           dangerouslySetInnerHTML={{ __html: campaign.content }}
         />

@@ -1,4 +1,4 @@
-import { hasHtmlContent } from "@/lib/html";
+import { hasHtmlContent, RICH_TEXT_CLASS_NAME } from "@/lib/html";
 import { getSettings, type Settings } from "@/lib/settings";
 
 type StaticPageProps = {
@@ -20,7 +20,7 @@ export async function StaticPage({ title, settingKey }: StaticPageProps) {
       <h1 className="text-xl leading-snug font-semibold">{title}</h1>
       {hasHtmlContent(content) ? (
         <div
-          className="prose prose-sm max-w-none prose-a:text-primary"
+          className={RICH_TEXT_CLASS_NAME}
           // Konten sudah disanitasi di server saat disimpan dari sbn-office.
           dangerouslySetInnerHTML={{ __html: content }}
         />
