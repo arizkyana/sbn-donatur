@@ -8,16 +8,24 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { WhatsAppButton } from "@/components/whatsapp/WhatsAppButton";
 import { formatDateTime } from "@/lib/date";
 import { getPaymentMethodLabel } from "@/lib/payment-method";
+import { getSettings } from "@/lib/settings";
 import type { Enums } from "@/lib/supabase/database.types";
 import { cn, formatRupiah } from "@/lib/utils";
+import { whatsappMessage } from "@/lib/whatsapp";
 import AutoRefresh from "./components/AutoRefresh";
 import { getDonationByOrderId } from "./queries";
 
 const STATUS_HEADERS: Record<
   Enums<"payment_status">,
-  { icon: LucideIcon; iconClassName: string; title: string; description: string }
+  {
+    icon: LucideIcon;
+    iconClassName: string;
+    title: string;
+    description: string;
+  }
 > = {
   SUCCESS: {
     icon: CircleCheckIcon,
@@ -46,7 +54,10 @@ const STATUS_HEADERS: Record<
 };
 
 export async function DonationStatus({ orderId }: { orderId: string }) {
-  const donation = await getDonationByOrderId(orderId);
+  const [donation, settings] = await Promise.all([
+    getDonationByOrderId(orderId),
+    getSettings(),
+  ]);
   if (!donation) notFound();
 
   const { campaigns: campaign, payment_status: status } = donation;
@@ -136,6 +147,12 @@ export async function DonationStatus({ orderId }: { orderId: string }) {
             Donasi Lagi
           </Button>
         )}
+        {/* Paling dibutuhkan saat PENDING dan FAILED; nomor donasi ikut di pesan. */}
+        <WhatsAppButton
+          size="lg"
+          phone={settings.whatsapp_number}
+          message={whatsappMessage.donation(donation.order_id)}
+        />
       </div>
     </div>
   );

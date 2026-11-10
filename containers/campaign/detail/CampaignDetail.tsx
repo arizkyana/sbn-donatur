@@ -3,13 +3,17 @@ import { notFound } from "next/navigation";
 import { ImageIcon } from "lucide-react";
 import { CampaignProgress } from "@/components/campaign/CampaignProgress";
 import { isCampaignEnded } from "@/lib/campaign";
+import { getSettings } from "@/lib/settings";
 import DonateBar from "./components/DonateBar";
 import DonationList from "./components/DonationList";
 import { getCampaignBySlug } from "./queries";
 
 export async function CampaignDetail({ slug }: { slug: string }) {
   // DRAFT, ARCHIVED, dan slug yang tidak ada sama-sama 404.
-  const campaign = await getCampaignBySlug(slug);
+  const [campaign, settings] = await Promise.all([
+    getCampaignBySlug(slug),
+    getSettings(),
+  ]);
   if (!campaign) notFound();
 
   return (
@@ -53,6 +57,7 @@ export async function CampaignDetail({ slug }: { slug: string }) {
         slug={campaign.slug}
         title={campaign.title}
         isEnded={isCampaignEnded(campaign.end_date, new Date())}
+        whatsappNumber={settings.whatsapp_number}
       />
     </article>
   );

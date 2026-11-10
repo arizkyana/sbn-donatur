@@ -14,6 +14,8 @@ export const whatsappMessage = {
   donation: (orderId: string) =>
     `Halo Admin SBN, saya ingin bertanya tentang donasi saya dengan nomor ${orderId}`,
   account: () => "Halo Admin SBN, saya ingin bertanya tentang donasi saya",
+  inactiveAccount: () =>
+    "Halo Admin SBN, akun saya dinonaktifkan. Saya ingin bertanya lebih lanjut.",
   general: () =>
     "Halo Admin SBN, saya ingin bertanya tentang Sobat Baik Nusantara",
 };

@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import Link from "next/link";
 import { Loader2Icon } from "lucide-react";
 import { Controller } from "react-hook-form";
@@ -13,13 +14,19 @@ import {
 import { Input } from "@/components/ui/input";
 import useLogin from "../hooks/useLogin";
 
-export default function LoginForm() {
+type LoginFormProps = {
+  /** Tombol "Chat Admin" (server, di dalam <Suspense>) untuk akun nonaktif. */
+  contactAdmin?: ReactNode;
+};
+
+export default function LoginForm({ contactAdmin }: LoginFormProps) {
   const {
     control,
     handleSubmit,
     onSubmit,
     formState: { errors, isSubmitting, isSubmitSuccessful },
     unverifiedEmail,
+    isInactive,
     resendStatus,
     resendError,
     onResendVerification,
@@ -39,6 +46,7 @@ export default function LoginForm() {
           className="flex flex-col gap-2 rounded-md bg-destructive/10 p-3 text-sm text-destructive"
         >
           <p>{errors.root.message}</p>
+          {isInactive && contactAdmin}
           {unverifiedEmail &&
             (resendStatus === "sent" ? (
               <p className="text-foreground">

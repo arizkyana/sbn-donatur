@@ -12,6 +12,8 @@ type WhatsAppButtonProps = {
    * `link`: link biasa dengan isi dan class dari pemanggil (footer, menu akun).
    */
   variant?: "button" | "icon" | "link";
+  /** Ukuran tombol untuk varian `button`. */
+  size?: "default" | "sm" | "lg";
   children?: ReactNode;
   className?: string;
 };
@@ -20,6 +22,7 @@ export function WhatsAppButton({
   phone,
   message,
   variant = "button",
+  size = "default",
   children,
   className,
 }: WhatsAppButtonProps) {
@@ -59,6 +62,7 @@ export function WhatsAppButton({
   return (
     <Button
       variant="outline"
+      size={size}
       className={className}
       nativeButton={false}
       render={anchor}
