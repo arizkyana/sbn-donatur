@@ -11,7 +11,7 @@ export const paymentStatusLabel: Record<Enums<"payment_status">, string> = {
 // Badge tidak punya varian sukses/peringatan; "default" memakai warna primary (hijau).
 export const paymentStatusBadgeVariant = {
   SUCCESS: "default",
-  PENDING: "secondary",
+  PENDING: "warning",
   EXPIRED: "outline",
   FAILED: "destructive",
 } as const satisfies Record<Enums<"payment_status">, string>;
