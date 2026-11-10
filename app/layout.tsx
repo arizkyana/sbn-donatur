@@ -5,6 +5,7 @@ import "./globals.css";
 import {
   ActiveBottomNavigation,
   BottomNavigation,
+  FloatingContactButton,
   Footer,
   Header,
 } from "@/components/layout";
@@ -60,6 +61,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             <main className="flex-1">{children}</main>
             {/* Footer memberi ruang untuk Bottom Navigation agar konten tidak tertutup. */}
             <Footer />
+            {/* Membaca nomor admin dari settings; tanpa nomor, tombol tidak tampil. */}
+            <Suspense fallback={null}>
+              <FloatingContactButton />
+            </Suspense>
             <Suspense fallback={<BottomNavigation activeHref={null} />}>
               <ActiveBottomNavigation />
             </Suspense>

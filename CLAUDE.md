@@ -72,7 +72,8 @@ Belum ada test runner. Setelah memindah atau menghapus route, `npx tsc --noEmit`
   - `BottomNavigation`: komponen presentasional dengan prop `activeHref`. Dipakai juga sebagai fallback `<Suspense>` (tanpa item aktif).
   - `ActiveBottomNavigation`: client component yang membaca `usePathname()`.
   - `navigation.ts`: `NAV_ITEMS`, `isActivePath()`, dan `getActiveHref()` (`/cari` dianggap Beranda).
-  - `Footer`: logo, link Tentang Kami, Syarat & Ketentuan, dan "Hubungi Kami" (WhatsApp, di dalam `<Suspense>`), serta "© Sobat Baik Nusantara" tanpa tahun (`new Date()` saat prerender membuat build gagal).
+  - `Footer`: logo, link Tentang Kami dan Syarat & Ketentuan, serta "© Sobat Baik Nusantara" tanpa tahun (`new Date()` saat prerender membuat build gagal).
+  - `FloatingContactButton`: tombol mengambang "Hubungi Kami" (WhatsApp admin, pesan umum) di pojok kanan bawah, di atas Bottom Navigation dan sejajar tepi kanan kolom `max-w-md`. Dirender di root layout di dalam `<Suspense>` karena membaca `getSettings()`, dan disembunyikan di halaman yang punya `data-sticky-bar` (detail campaign sudah punya tombol WhatsApp di `DonateBar`).
 - `lib/supabase/`:
   - `client.ts` (browser, hanya untuk membaca);
   - `server.ts` (session user, RLS berlaku);
@@ -87,7 +88,7 @@ Belum ada test runner. Setelah memindah atau menghapus route, `npx tsc --noEmit`
 - Pengaturan dari office (`settings`):
   - `lib/settings.ts` (`server-only`): `getSettings()` (`React.cache()`, server client) mengembalikan `whatsapp_number`, `terms_and_conditions`, `company_profile` (kosong → `null`). Tidak memakai `"use cache"` agar perubahan dari office langsung terlihat, jadi pemanggilnya wajib di dalam `<Suspense>`.
   - `lib/whatsapp.ts`: `getWhatsAppUrl()` (`wa.me`, `null` bila nomor kosong/tidak valid) dan `whatsappMessage` (pesan per halaman: campaign, donation, account, inactiveAccount, general).
-  - `components/whatsapp/`: `WhatsAppButton` (varian `button`/`icon`/`link`, tidak merender apa pun bila nomor kosong) dan `AdminWhatsAppButton` (async, membaca nomor sendiri; dipakai footer dan login).
+  - `components/whatsapp/`: `WhatsAppButton` (varian `button`/`icon`/`link`, tidak merender apa pun bila nomor kosong) dan `AdminWhatsAppButton` (async, membaca nomor sendiri; dipakai halaman login).
   - `lib/html.ts`: `hasHtmlContent()` untuk HTML editor yang hanya berisi tag kosong (`<p></p>`).
 - Helper bersama: `lib/utils.ts` (`cn`, `formatRupiah()`, `getAbsoluteUrl()` dari `NEXT_PUBLIC_SITE_URL`), `lib/youtube.ts` (`getYouTubeId()`, `getYouTubeEmbedUrl()`, `getYouTubeThumbnail()`; **identik dengan office**, jadi bila diubah salin apa adanya ke app lain), `lib/blog.ts` (`postTypeLabel`, `getPostImage()`, `getPostUrl()`), `lib/campaign.ts` (`getProgressPercent()` sama dengan office, plus `getRemainingDays()`, `isCampaignEnded()`, `formatRemainingDays()`, `getCampaignUrl()`), `lib/date.ts` (`formatRelativeTime()`, `formatDateTime()` dalam WIB, `startOfDayJakarta()`/`startOfNextDayJakarta()` untuk filter tanggal `.gte`/`.lt`), `lib/payment-method.ts` (`getPaymentMethodLabel()`, label `payment_type` Midtrans), dan `hooks/use-debounced-value.ts` (sama dengan office).
 - Komponen yang dipakai lebih dari satu container ditaruh di `components/<modul>/` (contoh: `components/campaign/CampaignProgress.tsx`, `components/share/ShareButton.tsx`). Komponen internal container memakai default export. Hook yang dipakai lebih dari satu container ditaruh di `hooks/` (contoh: `hooks/use-campaigns.ts`, dipakai beranda dan `/cari`).
@@ -148,7 +149,7 @@ Uji webhook di lokal dengan `curl` (contoh lengkap ada di DON005 backlog 003). S
   - Bottom Navigation fixed dengan 4 item: Beranda (`/`), Blog (`/blog`), Riwayat (`/akun/riwayat`), Akun (`/akun`), dengan `shadow-bar` dan `pb-[env(safe-area-inset-bottom)]`;
   - item aktif berwarna `--primary` dengan pill `bg-primary/10` di belakang ikon, dipilih oleh `getActiveHref()` (href terpanjang yang cocok), sehingga `/akun/riwayat` tidak ikut mengaktifkan Akun;
   - `Footer` dirender setelah `<main>` dan memberi ruang bawah untuk navigasi (`pb-[calc(6rem+env(safe-area-inset-bottom))]`). Halaman dengan sticky bar di atas navigasi menandai bar-nya dengan `data-sticky-bar`, dan footer menambah ruang lewat `group-has-[[data-sticky-bar]]/app:pb-[calc(11rem+env(safe-area-inset-bottom))]` (wrapper layout adalah `group/app`). `<main>` tidak diberi padding bawah;
-  - karena footer membaca `getSettings()`, semua halaman berupa partial prerender (◐), termasuk `/`, `/blog`, dan `/cari`.
+  - karena `FloatingContactButton` membaca `getSettings()`, semua halaman berupa partial prerender (◐), termasuk `/`, `/blog`, dan `/cari`.
 
   Bila nanti ada halaman yang tidak boleh menampilkan navigasi, pindahkan layout ini ke route group. Saat ini semua halaman (termasuk login, formulir donasi, dan status) tetap menampilkan navigasi.
 - Metadata root: title `{ default: "Sobat Baik Nusantara", template: "%s | Sobat Baik Nusantara" }`, `<html lang="id">`, `metadataBase` dari `NEXT_PUBLIC_SITE_URL` (fallback `http://localhost:3000`).
