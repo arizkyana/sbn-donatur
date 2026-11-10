@@ -25,6 +25,20 @@ export function isActivePath(pathname: string, href: string) {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
+/**
+ * Tujuan tombol kembali di header bila halaman detail dibuka langsung, atau
+ * `null` untuk halaman yang bukan detail (tanpa tombol kembali).
+ */
+export function getBackHref(pathname: string) {
+  const [first, second, third, ...rest] = pathname.split("/").filter(Boolean);
+  if (!second || rest.length > 0) return null;
+  if (first === "campaign" && !third) return "/";
+  if (first === "campaign" && third === "donasi") return `/campaign/${second}`;
+  if (first === "donasi" && !third) return "/";
+  if (first === "blog" && !third) return "/blog";
+  return null;
+}
+
 // Pilih href terpanjang yang cocok, agar /akun/riwayat tidak ikut mengaktifkan Akun.
 // Halaman pencarian dianggap bagian dari Beranda.
 export function getActiveHref(pathname: string) {

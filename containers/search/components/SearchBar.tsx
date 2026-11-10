@@ -1,10 +1,10 @@
 "use client";
 
 import { useRef } from "react";
-import { useRouter } from "next/navigation";
 import { ArrowLeftIcon, SearchIcon, XIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useBackNavigation } from "@/hooks/use-back-navigation";
 
 type SearchBarProps = {
   query: string;
@@ -12,14 +12,9 @@ type SearchBarProps = {
 };
 
 export default function SearchBar({ query, onQueryChange }: SearchBarProps) {
-  const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
-
-  const handleBack = () => {
-    // Dibuka langsung (tanpa riwayat di tab ini): kembali ke beranda.
-    if (window.history.length > 1) router.back();
-    else router.push("/");
-  };
+  // Dibuka langsung (tanpa riwayat di app): kembali ke beranda.
+  const handleBack = useBackNavigation("/");
 
   return (
     <form
