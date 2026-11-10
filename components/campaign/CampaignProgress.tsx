@@ -12,6 +12,8 @@ type CampaignProgressProps = {
   targetBudget: number | null;
   donorCount: number;
   endDate: string | null;
+  /** Sembunyikan baris jumlah donatur dan sisa hari (detail campaign punya tile sendiri). */
+  hideMeta?: boolean;
   className?: string;
 };
 
@@ -21,6 +23,7 @@ export function CampaignProgress({
   targetBudget,
   donorCount,
   endDate,
+  hideMeta = false,
   className,
 }: CampaignProgressProps) {
   const percent = getProgressPercent(collectedAmount, targetBudget);
@@ -53,16 +56,18 @@ export function CampaignProgress({
           dari target {formatRupiah(targetBudget)}
         </p>
       )}
-      <div className="flex items-center justify-between gap-2 text-sm text-muted-foreground">
-        <span className="flex items-center gap-1.5">
-          <UsersIcon className="size-4" />
-          {donorCount} donatur
-        </span>
-        <span className="flex items-center gap-1.5">
-          <ClockIcon className="size-4" />
-          {formatRemainingDays(remainingDays)}
-        </span>
-      </div>
+      {!hideMeta && (
+        <div className="flex items-center justify-between gap-2 text-sm text-muted-foreground">
+          <span className="flex items-center gap-1.5">
+            <UsersIcon className="size-4" />
+            {donorCount} donatur
+          </span>
+          <span className="flex items-center gap-1.5">
+            <ClockIcon className="size-4" />
+            {formatRemainingDays(remainingDays)}
+          </span>
+        </div>
+      )}
     </div>
   );
 }
