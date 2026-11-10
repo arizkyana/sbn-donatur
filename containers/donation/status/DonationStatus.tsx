@@ -8,6 +8,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { WhatsAppButton } from "@/components/whatsapp/WhatsAppButton";
 import { formatDateTime } from "@/lib/date";
 import { getPaymentMethodLabel } from "@/lib/payment-method";
@@ -16,6 +17,7 @@ import type { Enums } from "@/lib/supabase/database.types";
 import { cn, formatRupiah } from "@/lib/utils";
 import { whatsappMessage } from "@/lib/whatsapp";
 import AutoRefresh from "./components/AutoRefresh";
+import CopyOrderIdButton from "./components/CopyOrderIdButton";
 import { getDonationByOrderId } from "./queries";
 
 const STATUS_HEADERS: Record<
@@ -29,25 +31,25 @@ const STATUS_HEADERS: Record<
 > = {
   SUCCESS: {
     icon: CircleCheckIcon,
-    iconClassName: "text-primary",
+    iconClassName: "bg-primary/10 text-primary",
     title: "Terima kasih, donasi Anda berhasil",
     description: "Bukti donasi telah dikirim ke email Anda.",
   },
   PENDING: {
     icon: ClockIcon,
-    iconClassName: "text-brand-gold",
+    iconClassName: "bg-brand-gold/20 text-brand-gold-strong",
     title: "Menunggu pembayaran",
     description: "Selesaikan pembayaran sesuai instruksi di halaman Midtrans.",
   },
   EXPIRED: {
     icon: TimerOffIcon,
-    iconClassName: "text-muted-foreground",
+    iconClassName: "bg-muted text-muted-foreground",
     title: "Waktu pembayaran habis",
     description: "Donasi ini tidak dibayar sampai batas waktu pembayaran.",
   },
   FAILED: {
     icon: CircleXIcon,
-    iconClassName: "text-destructive",
+    iconClassName: "bg-destructive/10 text-destructive",
     title: "Pembayaran tidak berhasil",
     description: "Pembayaran dibatalkan atau ditolak. Silakan coba lagi.",
   },
@@ -65,7 +67,6 @@ export async function DonationStatus({ orderId }: { orderId: string }) {
   const StatusIcon = header.icon;
 
   const details = [
-    { label: "Nominal", value: formatRupiah(donation.amount) },
     { label: "Campaign", value: campaign.title },
     { label: "Atas nama", value: donation.donor_name },
     ...(status === "SUCCESS"
@@ -84,25 +85,44 @@ export async function DonationStatus({ orderId }: { orderId: string }) {
 
   return (
     <div className="flex flex-col gap-6 p-4">
-      <div className="flex flex-col items-center gap-2 py-6 text-center">
-        <StatusIcon className={cn("size-12", header.iconClassName)} />
-        <h1 className="text-lg font-semibold">{header.title}</h1>
-        <p className="text-sm text-muted-foreground">{header.description}</p>
+      <div className="flex flex-col items-center gap-2 pt-4 text-center">
+        <span
+          className={cn(
+            "mb-2 flex size-20 items-center justify-center rounded-full",
+            header.iconClassName,
+          )}
+        >
+          <StatusIcon className="size-10" />
+        </span>
+        <h1 className="text-xl leading-snug font-bold">{header.title}</h1>
+        <p className="text-2xl font-bold text-primary">
+          {formatRupiah(donation.amount)}
+        </p>
+        <p className="text-base text-muted-foreground">{header.description}</p>
       </div>
 
-      <dl className="flex flex-col gap-3 rounded-lg border p-4 text-sm">
-        {details.map(({ label, value }) => (
-          <div key={label} className="flex justify-between gap-4">
-            <dt className="shrink-0 text-muted-foreground">{label}</dt>
-            <dd className="text-right font-medium">{value}</dd>
-          </div>
-        ))}
-        {/* Referensi bila donatur menghubungi admin. */}
-        <div className="flex justify-between gap-4 border-t pt-3">
-          <dt className="shrink-0 text-muted-foreground">Nomor donasi</dt>
-          <dd className="font-mono text-xs leading-5">{donation.order_id}</dd>
-        </div>
-      </dl>
+      <Card>
+        <CardContent>
+          <dl className="flex flex-col gap-3 text-base">
+            {details.map(({ label, value }) => (
+              <div key={label} className="flex justify-between gap-4">
+                <dt className="shrink-0 text-muted-foreground">{label}</dt>
+                <dd className="text-right font-medium">{value}</dd>
+              </div>
+            ))}
+            {/* Referensi bila donatur menghubungi admin. */}
+            <div className="flex items-center justify-between gap-2 border-t pt-3">
+              <dt className="shrink-0 text-muted-foreground">Nomor donasi</dt>
+              <dd className="flex min-w-0 items-center gap-1">
+                <span className="truncate font-mono text-sm">
+                  {donation.order_id}
+                </span>
+                <CopyOrderIdButton orderId={donation.order_id} />
+              </dd>
+            </div>
+          </dl>
+        </CardContent>
+      </Card>
 
       <div className="flex flex-col gap-2">
         {status === "SUCCESS" && (

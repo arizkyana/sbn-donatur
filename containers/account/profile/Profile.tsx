@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { Separator } from "@/components/ui/separator";
+import { Card, CardContent } from "@/components/ui/card";
 import { requireDonatur } from "@/lib/auth";
 import { getSettings } from "@/lib/settings";
 import AccountMenu from "./components/AccountMenu";
@@ -21,13 +21,16 @@ export async function Profile() {
         <VerifiedToast />
       </Suspense>
       <ProfileCard fullName={user.fullName} email={user.email} />
-      <ProfileForm
-        defaultValues={{
-          full_name: user.fullName ?? "",
-          phone: user.phone ?? "",
-        }}
-      />
-      <Separator />
+      <Card>
+        <CardContent>
+          <ProfileForm
+            defaultValues={{
+              full_name: user.fullName ?? "",
+              phone: user.phone ?? "",
+            }}
+          />
+        </CardContent>
+      </Card>
       <AccountMenu whatsappNumber={settings.whatsapp_number} />
       <LogoutButton />
     </div>

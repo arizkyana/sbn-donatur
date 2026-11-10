@@ -31,7 +31,7 @@ export default function ProfileForm({
       noValidate
       className="flex flex-col gap-4"
     >
-      <h2 className="font-semibold">Ubah Profil</h2>
+      <h2 className="text-base font-bold">Ubah Profil</h2>
       {errors.root && (
         <p
           role="alert"
