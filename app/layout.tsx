@@ -54,12 +54,12 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="min-h-full bg-background md:bg-muted">
         <Providers>
-          <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col bg-background md:shadow-card">
+          {/* group/app: Footer menambah ruang bawah bila halaman punya sticky bar. */}
+          <div className="group/app mx-auto flex min-h-dvh w-full max-w-md flex-col bg-background md:shadow-card">
             <Header />
-            {/* Ruang untuk Bottom Navigation (h-16 + safe area) agar konten tidak tertutup. */}
-            <main className="flex-1 pb-[calc(5rem+env(safe-area-inset-bottom))]">
-              {children}
-            </main>
+            <main className="flex-1">{children}</main>
+            {/* Footer memberi ruang untuk Bottom Navigation agar konten tidak tertutup. */}
+            <Footer />
             <Suspense fallback={<BottomNavigation activeHref={null} />}>
               <ActiveBottomNavigation />
             </Suspense>
