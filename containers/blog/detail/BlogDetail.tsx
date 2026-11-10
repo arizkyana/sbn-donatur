@@ -7,7 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { getPostUrl } from "@/lib/blog";
 import { formatDateTime } from "@/lib/date";
-import { hasHtmlContent } from "@/lib/html";
+import { hasHtmlContent, RICH_TEXT_CLASS_NAME } from "@/lib/html";
+import { cn } from "@/lib/utils";
 import { getYouTubeEmbedUrl, getYouTubeId } from "@/lib/youtube";
 import { getPostBySlug } from "./queries";
 
@@ -67,7 +68,7 @@ export async function BlogDetail({ slug }: { slug: string }) {
       </div>
       {hasHtmlContent(post.content) && (
         <div
-          className="prose prose-sm max-w-none border-t p-4 prose-a:text-primary"
+          className={cn(RICH_TEXT_CLASS_NAME, "border-t p-4")}
           // Konten sudah disanitasi di server saat disimpan dari sbn-office.
           dangerouslySetInnerHTML={{ __html: post.content }}
         />
