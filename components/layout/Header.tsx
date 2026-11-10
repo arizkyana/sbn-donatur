@@ -1,8 +1,8 @@
-import Image from "next/image";
 import Link from "next/link";
 import { Suspense } from "react";
 import { HeaderBackButton } from "./HeaderBackButton";
 import { HeaderSearchButton, SearchButtonLink } from "./HeaderSearchButton";
+import { SiteLogo } from "./SiteLogo";
 
 export function Header() {
   return (
@@ -13,11 +13,9 @@ export function Header() {
           <HeaderBackButton />
         </Suspense>
         <Link href="/" className="flex min-w-0 flex-1 items-center gap-2.5">
-          <Image
-            src="/logo-sbn.jpg"
+          <SiteLogo
+            size={36}
             alt="Logo Sobat Baik Nusantara"
-            width={36}
-            height={36}
             className="rounded-full"
             preload
           />

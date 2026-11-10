@@ -74,13 +74,14 @@ Belum ada test runner. Setelah memindah atau menghapus route, `npx tsc --noEmit`
   - `ActiveBottomNavigation`: client component yang membaca `usePathname()`.
   - `navigation.ts`: `NAV_ITEMS`, `isActivePath()`, `getActiveHref()` (`/cari` dianggap Beranda), dan `getBackHref()`.
   - `Footer`: logo, link Tentang Kami dan Syarat & Ketentuan, serta "© Sobat Baik Nusantara" tanpa tahun (`new Date()` saat prerender membuat build gagal).
+  - `SiteLogo`: logo dari pengaturan office, dipakai `Header`, `Footer`, dan `AuthPageHeader`. URL-nya disediakan `LogoProvider` di root layout (context), jadi bisa dipakai di server maupun client component. Jangan pakai `/logo-sbn.jpg` langsung.
   - `FloatingContactButton`: tombol mengambang "Hubungi Kami" (WhatsApp admin, pesan umum) di pojok kanan bawah, di atas Bottom Navigation dan sejajar tepi kanan kolom `max-w-md`. Dirender di root layout di dalam `<Suspense>` karena membaca `getSettings()`, dan disembunyikan di halaman yang punya `data-sticky-bar` (bar donasi detail campaign sudah punya tombol WhatsApp, dan ringkasan total formulir donasi akan tertutup tombol ini).
 - `lib/supabase/`:
   - `client.ts` (browser, hanya untuk membaca);
   - `server.ts` (session user, RLS berlaku);
   - `admin.ts` (service role, `import "server-only"`, hanya untuk insert/update `transactions`);
   - `proxy.ts` (`updateSession()` untuk `proxy.ts` root);
-  - `public.ts` (`createPublicClient()`: publishable key tanpa session dan tanpa cookies, RLS anon berlaku; untuk `"use cache"` seperti sitemap);
+  - `public.ts` (`createPublicClient()`: publishable key tanpa session dan tanpa cookies, RLS anon berlaku; untuk `"use cache"` seperti sitemap dan logo);
   - `database.types.ts` (hasil generate).
 - `lib/midtrans.ts` (`server-only`): integrasi Midtrans lewat `fetch` tanpa SDK. Isinya `ORDER_ID_PATTERN`, `generateOrderId(now)`, `createSnapTransaction()`, `getTransactionStatus()` (GET status Core API), `mapPaymentStatus()`, `getPaidAt(settlementTime, now)`, dan `verifySignature()` (tidak dipakai webhook, lihat alur donasi). `MIDTRANS_SERVER_KEY` hanya boleh dibaca di file ini. Snap dikirim dengan header `X-Override-Notification` ke `${NEXT_PUBLIC_SITE_URL}/api/midtrans/notification`, jadi `NEXT_PUBLIC_SITE_URL` harus sama dengan URL publik donatur (lokal `http://localhost:3002`; uji webhook asli lewat tunnel ngrok, lihat README).
 - `lib/email/` (`server-only`): `donation-receipt.ts` membuat subject, HTML (string template, tanpa react-email; input di-escape), dan teks bukti donasi; `send.ts` berisi `sendDonationReceipt(transactionId)` yang mengirim lewat Resend dengan `idempotencyKey` per `order_id`. Resend mengembalikan `{ error }` (tidak melempar), dan kegagalan jaringan muncul sebagai `application_error` tanpa detail. Error dicatat di log dan tidak dilempar ulang.
@@ -88,6 +89,7 @@ Belum ada test runner. Setelah memindah atau menghapus route, `npx tsc --noEmit`
 - `lib/redirect.ts`: `getSafeNextPath()` (cegah open redirect; dipakai proxy juga, jadi tanpa `server-only`) dan `getAuthConfirmUrl()` (`${NEXT_PUBLIC_SITE_URL}/auth/confirm`). `lib/auth-errors.ts`: `getAuthErrorMessage()`/`getAuthErrorCode()` memetakan `error.code` Supabase Auth ke Bahasa Indonesia. `lib/validation.ts`: schema nama, email, no. HP, dan password yang dipakai bersama formulir donasi dan akun, serta `SLUG_PATTERN` untuk `queries.ts` campaign dan blog. `components/auth/`: `RedirectIfLoggedIn` dan `AuthPageHeader`.
 - Pengaturan dari office (`settings`):
   - `lib/settings.ts` (`server-only`): `getSettings()` (`React.cache()`, server client) mengembalikan `whatsapp_number`, `terms_and_conditions`, `company_profile` (kosong → `null`). Tidak memakai `"use cache"` agar perubahan dari office langsung terlihat, jadi pemanggilnya wajib di dalam `<Suspense>`.
+  - `getLogoSrc()` di file yang sama: URL `logo_url` atau logo bawaan (`DEFAULT_LOGO_SRC` di `lib/logo.ts`). Pengecualian dari aturan di atas: memakai `"use cache"` + `cacheLife("minutes")` (public client) agar logo ikut kerangka statis dan favicon (`icons` di `generateMetadata` root layout) ada di `<head>`, sehingga semua route ber-revalidate 1 menit. Office tidak bisa me-revalidate cache app ini, jadi logo baru tampil paling lambat beberapa menit setelah disimpan. Hanya URL bucket `site-assets` project ini yang dipakai (`isLogoUrl()`); nilai lain atau gagal dibaca diganti logo bawaan. `app/favicon.ico` sengaja tidak ada karena mengalahkan `icons` di metadata.
   - `lib/whatsapp.ts`: `getWhatsAppUrl()` (`wa.me`, `null` bila nomor kosong/tidak valid) dan `whatsappMessage` (pesan per halaman: campaign, donation, account, inactiveAccount, general).
   - `components/whatsapp/`: `WhatsAppButton` (varian `button`/`icon`/`link`, tidak merender apa pun bila nomor kosong) dan `AdminWhatsAppButton` (async, membaca nomor sendiri; dipakai halaman login).
   - `lib/html.ts`: `hasHtmlContent()` untuk HTML editor yang hanya berisi tag kosong (`<p></p>`), dan `RICH_TEXT_CLASS_NAME` (class `prose` 16 px untuk konten campaign, artikel, S&K, dan profil; tabel lebar di-scroll di dalam kotaknya sendiri agar halaman tidak ter-scroll ke samping).
@@ -153,7 +155,7 @@ Uji webhook di lokal dengan `curl` (contoh lengkap ada di DON005 backlog 003). S
   - karena `FloatingContactButton` membaca `getSettings()`, semua halaman berupa partial prerender (◐), termasuk `/`, `/blog`, dan `/cari`.
 
   Bila nanti ada halaman yang tidak boleh menampilkan navigasi, pindahkan layout ini ke route group. Saat ini semua halaman (termasuk login, formulir donasi, dan status) tetap menampilkan navigasi.
-- Metadata root: title `{ default: "Sobat Baik Nusantara", template: "%s | Sobat Baik Nusantara" }`, `<html lang="id">`, `metadataBase` dari `NEXT_PUBLIC_SITE_URL` (fallback `http://localhost:3000`).
+- Metadata root (`generateMetadata`): title `{ default: "Sobat Baik Nusantara", template: "%s | Sobat Baik Nusantara" }`, `<html lang="id">`, `metadataBase` dari `NEXT_PUBLIC_SITE_URL` (fallback `http://localhost:3000`), dan favicon dari `getLogoSrc()`.
 
 ### Konvensi lain
 

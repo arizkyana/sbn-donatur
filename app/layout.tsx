@@ -8,7 +8,9 @@ import {
   FloatingContactButton,
   Footer,
   Header,
+  LogoProvider,
 } from "@/components/layout";
+import { getLogoSrc } from "@/lib/settings";
 import { cn } from "@/lib/utils";
 import { Providers } from "./providers";
 
@@ -22,17 +24,21 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export const metadata: Metadata = {
-  metadataBase: new URL(
-    process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000",
-  ),
-  title: {
-    default: "Sobat Baik Nusantara",
-    template: "%s | Sobat Baik Nusantara",
-  },
-  description:
-    "Salurkan donasi untuk program kebaikan Sobat Baik Nusantara secara mudah dan transparan.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  return {
+    metadataBase: new URL(
+      process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000",
+    ),
+    title: {
+      default: "Sobat Baik Nusantara",
+      template: "%s | Sobat Baik Nusantara",
+    },
+    description:
+      "Salurkan donasi untuk program kebaikan Sobat Baik Nusantara secara mudah dan transparan.",
+    // Favicon mengikuti logo di pengaturan office.
+    icons: { icon: await getLogoSrc() },
+  };
+}
 
 export const viewport: Viewport = {
   // Sama dengan latar header agar bilah browser HP menyatu dengan header.
@@ -41,7 +47,10 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  // Di-cache (lib/settings.ts), jadi tidak menunda kerangka statis halaman.
+  const logoSrc = await getLogoSrc();
+
   return (
     <html
       lang="id"
@@ -55,20 +64,22 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="min-h-full bg-background md:bg-muted">
         <Providers>
-          {/* group/app: Footer menambah ruang bawah bila halaman punya sticky bar. */}
-          <div className="group/app mx-auto flex min-h-dvh w-full max-w-md flex-col bg-background md:shadow-card">
-            <Header />
-            <main className="flex-1">{children}</main>
-            {/* Footer memberi ruang untuk Bottom Navigation agar konten tidak tertutup. */}
-            <Footer />
-            {/* Membaca nomor admin dari settings; tanpa nomor, tombol tidak tampil. */}
-            <Suspense fallback={null}>
-              <FloatingContactButton />
-            </Suspense>
-            <Suspense fallback={<BottomNavigation activeHref={null} />}>
-              <ActiveBottomNavigation />
-            </Suspense>
-          </div>
+          <LogoProvider src={logoSrc}>
+            {/* group/app: Footer menambah ruang bawah bila halaman punya sticky bar. */}
+            <div className="group/app mx-auto flex min-h-dvh w-full max-w-md flex-col bg-background md:shadow-card">
+              <Header />
+              <main className="flex-1">{children}</main>
+              {/* Footer memberi ruang untuk Bottom Navigation agar konten tidak tertutup. */}
+              <Footer />
+              {/* Membaca nomor admin dari settings; tanpa nomor, tombol tidak tampil. */}
+              <Suspense fallback={null}>
+                <FloatingContactButton />
+              </Suspense>
+              <Suspense fallback={<BottomNavigation activeHref={null} />}>
+                <ActiveBottomNavigation />
+              </Suspense>
+            </div>
+          </LogoProvider>
         </Providers>
       </body>
     </html>

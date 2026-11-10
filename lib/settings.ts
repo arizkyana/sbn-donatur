@@ -1,6 +1,9 @@
 import "server-only";
 
+import { cacheLife } from "next/cache";
 import { cache } from "react";
+import { DEFAULT_LOGO_SRC, isLogoUrl } from "@/lib/logo";
+import { createPublicClient } from "@/lib/supabase/public";
 import { createClient } from "@/lib/supabase/server";
 
 export type Settings = {
@@ -37,3 +40,31 @@ export const getSettings = cache(async (): Promise<Settings> => {
     company_profile: values.get("company_profile") || null,
   };
 });
+
+/**
+ * Logo utama dari `settings.logo_url` untuk header, footer, halaman auth, dan
+ * favicon (root layout), atau logo bawaan bila kosong.
+ *
+ * Berbeda dengan `getSettings()`, logo di-cache agar tetap ikut kerangka statis
+ * setiap halaman dan favicon ada di `<head>`. Office tidak bisa me-revalidate
+ * cache app ini, jadi logo baru tampil paling lambat beberapa menit setelah
+ * disimpan (diperbarui di latar belakang setelah 1 menit).
+ */
+export async function getLogoSrc() {
+  "use cache";
+  cacheLife("minutes");
+
+  const { data, error } = await createPublicClient()
+    .from("settings")
+    .select("value")
+    .eq("key", "logo_url")
+    .maybeSingle();
+  // Logo gagal dibaca tidak boleh menggagalkan halaman: pakai logo bawaan.
+  if (error) {
+    console.error("Logo gagal dibaca", error);
+    return DEFAULT_LOGO_SRC;
+  }
+
+  const url = data?.value.trim();
+  return isLogoUrl(url) ? url : DEFAULT_LOGO_SRC;
+}
