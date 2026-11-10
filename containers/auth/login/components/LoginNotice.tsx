@@ -1,3 +1,6 @@
+import { AdminWhatsAppButton } from "@/components/whatsapp/AdminWhatsAppButton";
+import { whatsappMessage } from "@/lib/whatsapp";
+
 // Pesan dari redirect lain: link verifikasi/reset yang gagal (AKN003) dan
 // akun nonaktif (requireDonatur). Render di dalam <Suspense> karena membaca searchParams.
 const NOTICES: Record<string, string> = {
@@ -15,11 +18,17 @@ export async function LoginNotice({ searchParams }: LoginNoticeProps) {
   if (!message) return null;
 
   return (
-    <p
+    <div
       role="alert"
-      className="rounded-md bg-destructive/10 p-3 text-sm text-destructive"
+      className="flex flex-col gap-2 rounded-md bg-destructive/10 p-3 text-sm text-destructive"
     >
-      {message}
-    </p>
+      <p>{message}</p>
+      {error === "nonaktif" && (
+        <AdminWhatsAppButton
+          className="self-start"
+          message={whatsappMessage.inactiveAccount()}
+        />
+      )}
+    </div>
   );
 }

@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { Separator } from "@/components/ui/separator";
 import { requireDonatur } from "@/lib/auth";
+import { getSettings } from "@/lib/settings";
 import AccountMenu from "./components/AccountMenu";
 import LogoutButton from "./components/LogoutButton";
 import ProfileCard from "./components/ProfileCard";
@@ -9,7 +10,10 @@ import VerifiedToast from "./components/VerifiedToast";
 
 // Halaman /akun berada di dalam <Suspense> loading.tsx, jadi aman membaca session.
 export async function Profile() {
-  const user = await requireDonatur("/akun");
+  const [user, settings] = await Promise.all([
+    requireDonatur("/akun"),
+    getSettings(),
+  ]);
 
   return (
     <div className="flex flex-col gap-6 p-4">
@@ -24,7 +28,7 @@ export async function Profile() {
         }}
       />
       <Separator />
-      <AccountMenu />
+      <AccountMenu whatsappNumber={settings.whatsapp_number} />
       <LogoutButton />
     </div>
   );
