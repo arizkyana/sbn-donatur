@@ -7,37 +7,53 @@ import { Button } from "@/components/ui/button";
 type ShareButtonProps = {
   title: string;
   url: string;
+  /** `true`: tombol dengan teks "Bagikan"; `false` (default): tombol ikon saja. */
+  withLabel?: boolean;
 };
 
-export default function ShareButton({ title, url }: ShareButtonProps) {
+// Dipakai detail campaign (DonateBar) dan detail blog.
+export function ShareButton({
+  title,
+  url,
+  withLabel = false,
+}: ShareButtonProps) {
   const handleShare = async () => {
     // Web Share API umumnya hanya tersedia di HP; selain itu link disalin.
     if (navigator.share) {
       try {
         await navigator.share({ title, url });
       } catch (error) {
-        // AbortError: donatur menutup share sheet tanpa memilih aplikasi.
+        // AbortError: pengunjung menutup share sheet tanpa memilih aplikasi.
         if (error instanceof DOMException && error.name === "AbortError") {
           return;
         }
-        toast.error("Campaign gagal dibagikan");
+        toast.error("Gagal membagikan link");
       }
       return;
     }
 
     try {
       await navigator.clipboard.writeText(url);
-      toast.success("Link campaign disalin");
+      toast.success("Link disalin");
     } catch {
-      toast.error("Link campaign gagal disalin");
+      toast.error("Link gagal disalin");
     }
   };
+
+  if (withLabel) {
+    return (
+      <Button variant="outline" onClick={handleShare}>
+        <Share2Icon />
+        Bagikan
+      </Button>
+    );
+  }
 
   return (
     <Button
       variant="outline"
       size="icon-lg"
-      aria-label="Bagikan campaign"
+      aria-label="Bagikan"
       onClick={handleShare}
     >
       <Share2Icon />

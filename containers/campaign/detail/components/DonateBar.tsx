@@ -1,7 +1,7 @@
 import Link from "next/link";
+import { ShareButton } from "@/components/share/ShareButton";
 import { Button } from "@/components/ui/button";
 import { getCampaignUrl } from "@/lib/campaign";
-import ShareButton from "./ShareButton";
 
 type DonateBarProps = {
   slug: string;
