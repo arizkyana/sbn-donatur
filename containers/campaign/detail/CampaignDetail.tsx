@@ -13,8 +13,8 @@ export async function CampaignDetail({ slug }: { slug: string }) {
   if (!campaign) notFound();
 
   return (
-    // pb-20: ruang untuk sticky bar donasi di atas Bottom Navigation.
-    <article className="flex flex-col pb-20">
+    // Ruang untuk sticky bar donasi diberikan oleh Footer (data-sticky-bar).
+    <article className="flex flex-col">
       <div className="relative flex aspect-video items-center justify-center bg-muted">
         {campaign.cover ? (
           <Image
@@ -30,9 +30,7 @@ export async function CampaignDetail({ slug }: { slug: string }) {
         )}
       </div>
       <div className="flex flex-col gap-4 p-4">
-        <h1 className="text-xl leading-snug font-semibold">
-          {campaign.title}
-        </h1>
+        <h1 className="text-xl leading-snug font-semibold">{campaign.title}</h1>
         <CampaignProgress
           collectedAmount={campaign.collected}
           targetBudget={campaign.target_budget}
