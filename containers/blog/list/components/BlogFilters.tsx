@@ -55,9 +55,10 @@ export default function BlogFilters({
         {categoryOptions.map((category) => (
           <Button
             key={category.id ?? "all"}
-            variant={categoriesId === category.id ? "secondary" : "ghost"}
+            // Kategori terpilih ditandai hijau lembut agar beda dari tab tipe di atasnya.
+            variant={categoriesId === category.id ? "outline" : "ghost"}
             size="sm"
-            className="shrink-0 rounded-full"
+            className="shrink-0 rounded-full aria-pressed:border-primary/40 aria-pressed:bg-primary/10 aria-pressed:text-primary"
             aria-pressed={categoriesId === category.id}
             onClick={() => onCategoryChange(category.id)}
           >

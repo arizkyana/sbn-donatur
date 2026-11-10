@@ -6,9 +6,9 @@ const linkClassName =
 
 export function Footer() {
   return (
-    // Ruang bawah untuk Bottom Navigation (h-16 + safe area), ditambah sticky bar
-    // donasi (data-sticky-bar) di halaman yang memilikinya.
-    <footer className="flex flex-col gap-4 border-t bg-muted/60 px-4 pt-6 pb-[calc(6rem+env(safe-area-inset-bottom))] group-has-[[data-sticky-bar]]/app:pb-[calc(11rem+env(safe-area-inset-bottom))]">
+    // Ruang bawah untuk Bottom Navigation (h-16 + safe area), ditambah bar donasi
+    // yang fixed (data-sticky-bar="fixed") di halaman yang memilikinya.
+    <footer className="flex flex-col gap-4 border-t bg-muted/60 px-4 pt-6 pb-[calc(6rem+env(safe-area-inset-bottom))] group-has-[[data-sticky-bar=fixed]]/app:pb-[calc(11rem+env(safe-area-inset-bottom))]">
       <div className="flex items-center gap-2">
         <Image
           src="/logo-sbn.jpg"

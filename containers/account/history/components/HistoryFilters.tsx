@@ -75,7 +75,7 @@ export default function HistoryFilters({
       </div>
       {error && <p className="text-sm text-destructive">{error}</p>}
       <div className="flex items-start justify-between gap-3">
-        <p className="text-xs text-muted-foreground">
+        <p className="text-sm text-muted-foreground">
           Riwayat hanya menampilkan donasi yang dilakukan saat Anda masuk ke
           akun.
         </p>

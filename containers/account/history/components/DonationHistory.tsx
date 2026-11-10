@@ -2,6 +2,12 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import {
+  HeartHandshakeIcon,
+  SearchXIcon,
+  TriangleAlertIcon,
+} from "lucide-react";
+import { EmptyState } from "@/components/feedback/EmptyState";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
@@ -49,36 +55,42 @@ export default function DonationHistory({ userId }: { userId: string }) {
 
     if (isError) {
       return (
-        <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed p-10 text-center">
-          <p className="text-sm text-muted-foreground">
-            Riwayat donasi gagal dimuat.
-          </p>
-          <Button
-            variant="outline"
-            disabled={isRefetching}
-            onClick={() => refetch()}
-          >
-            Coba lagi
-          </Button>
-        </div>
+        <EmptyState
+          icon={TriangleAlertIcon}
+          title="Riwayat donasi gagal dimuat"
+          description="Periksa koneksi internet, lalu coba lagi."
+          action={
+            <Button
+              variant="outline"
+              disabled={isRefetching}
+              onClick={() => refetch()}
+            >
+              Coba lagi
+            </Button>
+          }
+        />
       );
     }
 
     const donations = data.pages.flatMap((page) => page.rows);
     if (donations.length === 0) {
       return hasFilters ? (
-        <div className="rounded-lg border border-dashed p-10 text-center">
-          <p className="text-sm text-muted-foreground">
-            Tidak ada donasi yang cocok dengan filter
-          </p>
-        </div>
+        <EmptyState
+          icon={SearchXIcon}
+          title="Tidak ada donasi yang cocok dengan filter"
+          description="Ubah campaign atau rentang tanggal, atau tekan Reset."
+        />
       ) : (
-        <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed p-10 text-center">
-          <p className="text-sm text-muted-foreground">Belum ada donasi</p>
-          <Button nativeButton={false} render={<Link href="/" />}>
-            Lihat Campaign
-          </Button>
-        </div>
+        <EmptyState
+          icon={HeartHandshakeIcon}
+          title="Belum ada donasi"
+          description="Donasi yang Anda lakukan saat masuk ke akun akan tampil di sini."
+          action={
+            <Button nativeButton={false} render={<Link href="/" />}>
+              Lihat Campaign
+            </Button>
+          }
+        />
       );
     }
 

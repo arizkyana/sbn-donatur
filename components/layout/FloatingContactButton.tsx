@@ -6,8 +6,8 @@ import { whatsappMessage } from "@/lib/whatsapp";
 /**
  * Tombol "Hubungi Kami" (WhatsApp admin) yang mengambang di pojok kanan bawah,
  * di atas Bottom Navigation dan sejajar tepi kanan kolom `max-w-md`.
- * Disembunyikan di halaman yang punya sticky bar (`data-sticky-bar`), karena bar
- * itu sudah punya tombol WhatsApp sendiri. Membaca settings, jadi wajib di dalam `<Suspense>`.
+ * Disembunyikan di halaman yang punya bar bawah (`data-sticky-bar`): bar donasi
+ * sudah punya tombol WhatsApp sendiri, dan tombol ini akan menutupi bar tersebut. Membaca settings, jadi wajib di dalam `<Suspense>`.
  */
 export async function FloatingContactButton() {
   const { whatsapp_number } = await getSettings();

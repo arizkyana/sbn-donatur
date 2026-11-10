@@ -105,7 +105,7 @@ export default function RegisterForm({ form, onSubmit }: RegisterFormProps) {
         ))}
       </FieldGroup>
       <div className="flex flex-col gap-3">
-        <p className="text-xs text-muted-foreground">
+        <p className="text-sm text-muted-foreground">
           Dengan mendaftar, Anda menyetujui{" "}
           <Link
             href="/syarat-ketentuan"

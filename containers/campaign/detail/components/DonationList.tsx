@@ -1,11 +1,32 @@
 "use client";
 
-import { UserRoundIcon } from "lucide-react";
+import {
+  HeartHandshakeIcon,
+  TriangleAlertIcon,
+  UserRoundIcon,
+} from "lucide-react";
+import { EmptyState } from "@/components/feedback/EmptyState";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatRelativeTime } from "@/lib/date";
-import { formatRupiah } from "@/lib/utils";
+import { cn, formatRupiah } from "@/lib/utils";
 import useDonations from "../hooks/useDonations";
+
+// Warna avatar bergantian dari palet hijau dan emas.
+const AVATAR_COLORS = [
+  "bg-primary/10 text-primary",
+  "bg-brand-gold/20 text-brand-gold-strong",
+];
+
+function getInitials(name: string) {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((word) => word[0]?.toUpperCase())
+    .join("");
+}
 
 type DonationListProps = {
   campaignsId: number;
@@ -32,7 +53,7 @@ export default function DonationList({
       return (
         <div className="flex flex-col gap-3">
           {Array.from({ length: 3 }, (_, index) => (
-            <Skeleton key={index} className="h-10 w-full" />
+            <Skeleton key={index} className="h-12 w-full" />
           ))}
         </div>
       );
@@ -40,27 +61,32 @@ export default function DonationList({
 
     if (isError) {
       return (
-        <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed p-6 text-center">
-          <p className="text-sm text-muted-foreground">
-            Daftar donasi gagal dimuat.
-          </p>
-          <Button
-            variant="outline"
-            disabled={isRefetching}
-            onClick={() => refetch()}
-          >
-            Coba lagi
-          </Button>
-        </div>
+        <EmptyState
+          icon={TriangleAlertIcon}
+          title="Daftar donasi gagal dimuat"
+          className="py-6"
+          action={
+            <Button
+              variant="outline"
+              disabled={isRefetching}
+              onClick={() => refetch()}
+            >
+              Coba lagi
+            </Button>
+          }
+        />
       );
     }
 
     const donations = data.pages.flatMap((page) => page.rows);
     if (donations.length === 0) {
       return (
-        <p className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
-          Jadilah donatur pertama untuk campaign ini
-        </p>
+        <EmptyState
+          icon={HeartHandshakeIcon}
+          title="Jadilah donatur pertama"
+          description="Belum ada donasi untuk campaign ini."
+          className="py-6"
+        />
       );
     }
 
@@ -72,20 +98,30 @@ export default function DonationList({
           {donations.map((donation, index) => (
             // View public_donations tidak punya id; daftar hanya bertambah di akhir.
             <li key={index} className="flex items-center gap-3 py-3">
-              <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
-                <UserRoundIcon className="size-4" />
+              <div
+                className={cn(
+                  "flex size-10 shrink-0 items-center justify-center rounded-full text-sm font-bold",
+                  AVATAR_COLORS[index % AVATAR_COLORS.length],
+                )}
+              >
+                {/* "Anonim" dan nama kosong memakai ikon, bukan inisial. */}
+                {donation.display_name && donation.display_name !== "Anonim" ? (
+                  getInitials(donation.display_name)
+                ) : (
+                  <UserRoundIcon className="size-5" />
+                )}
               </div>
               <div className="flex min-w-0 flex-1 flex-col">
-                <span className="truncate text-sm font-medium">
+                <span className="truncate text-base font-semibold">
                   {donation.display_name}
                 </span>
                 {donation.paid_at && (
-                  <span className="text-xs text-muted-foreground">
+                  <span className="text-sm text-muted-foreground">
                     {formatRelativeTime(donation.paid_at, now)}
                   </span>
                 )}
               </div>
-              <span className="text-sm font-semibold">
+              <span className="text-base font-bold text-primary">
                 {formatRupiah(donation.amount ?? 0)}
               </span>
             </li>
@@ -105,9 +141,13 @@ export default function DonationList({
   };
 
   return (
-    <section className="flex flex-col gap-3 border-t p-4">
-      <h2 className="font-semibold">Donasi ({donorCount})</h2>
-      {renderContent()}
-    </section>
+    <Card>
+      <CardHeader>
+        <h2 className="text-lg font-bold">Donasi ({donorCount})</h2>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-3">
+        {renderContent()}
+      </CardContent>
+    </Card>
   );
 }

@@ -28,7 +28,7 @@ export default function AutoRefresh() {
   }, [router]);
 
   return (
-    <p className="text-center text-xs text-muted-foreground">
+    <p className="text-center text-sm text-muted-foreground">
       {isStopped
         ? "Sudah membayar tapi status belum berubah? Muat ulang halaman ini beberapa saat lagi."
         : "Halaman ini diperbarui otomatis."}

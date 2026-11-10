@@ -21,10 +21,11 @@ export default function DonateBar({
   const url = getCampaignUrl(slug);
 
   return (
-    // bottom-16: tepat di atas Bottom Navigation (h-16).
+    // Latar bar menerus sampai bawah layar (di belakang Bottom Navigation) agar sudut
+    // membulat navigasi tidak memperlihatkan konten; tombolnya tepat di atas navigasi.
     <div
-      data-sticky-bar
-      className="fixed inset-x-0 bottom-16 z-10 mx-auto flex max-w-md gap-2 border-t bg-background px-4 py-3"
+      data-sticky-bar="fixed"
+      className="fixed inset-x-0 bottom-0 z-10 mx-auto flex max-w-md gap-2 rounded-t-2xl bg-card px-4 pt-3 pb-[calc(4.75rem+env(safe-area-inset-bottom))] shadow-bar"
     >
       <ShareButton title={title} url={url} />
       <WhatsAppButton

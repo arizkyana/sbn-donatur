@@ -10,4 +10,4 @@ export function hasHtmlContent(html: string | null): html is string {
  * isi sel dengan `<p>`, jadi margin paragraf di dalam sel dihapus.
  */
 export const RICH_TEXT_CLASS_NAME =
-  "prose prose-sm max-w-none prose-a:text-primary prose-table:block prose-table:overflow-x-auto prose-th:border prose-th:bg-muted prose-th:px-2 prose-th:py-1.5 prose-td:border prose-td:px-2 prose-td:py-1.5 [&_:is(th,td)>p]:my-0";
+  "prose max-w-none prose-a:text-primary prose-table:block prose-table:overflow-x-auto prose-th:border prose-th:bg-muted prose-th:px-2 prose-th:py-1.5 prose-td:border prose-td:px-2 prose-td:py-1.5 [&_:is(th,td)>p]:my-0";

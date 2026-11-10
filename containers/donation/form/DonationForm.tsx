@@ -15,7 +15,7 @@ export async function DonationForm({ slug }: { slug: string }) {
   if (!campaign) notFound();
 
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col gap-4 p-4">
       <CampaignSummary title={campaign.title} cover={campaign.cover} />
       {/* Sama dengan tombol donasi di detail campaign (A5 di backlog 003). */}
       {isCampaignEnded(campaign.end_date, new Date()) ? (
