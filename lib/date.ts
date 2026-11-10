@@ -36,3 +36,20 @@ export function formatRelativeTime(timestamp: string, now: Date) {
   }
   return "Baru saja";
 }
+
+// WIB (UTC+7) tidak mengenal daylight saving, jadi offset bisa ditulis tetap.
+
+/** `YYYY-MM-DD` → awal hari tersebut di Asia/Jakarta, untuk batas `.gte()`. */
+export function startOfDayJakarta(date: string) {
+  return `${date}T00:00:00+07:00`;
+}
+
+/**
+ * `YYYY-MM-DD` → awal hari berikutnya di Asia/Jakarta, untuk batas `.lt()`.
+ * Lebih tepat daripada `23:59:59`, yang melewatkan detik terakhir.
+ */
+export function startOfNextDayJakarta(date: string) {
+  const next = new Date(`${date}T00:00:00Z`);
+  next.setUTCDate(next.getUTCDate() + 1);
+  return `${next.toISOString().slice(0, 10)}T00:00:00+07:00`;
+}

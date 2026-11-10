@@ -43,7 +43,8 @@ export async function createDonation(
     .from("transactions")
     .insert({
       campaigns_id: campaign.id,
-      users_id: user?.id ?? null,
+      // Akun nonaktif tetap bisa berdonasi, tetapi tidak ditautkan ke akunnya.
+      users_id: user?.isActive ? user.id : null,
       donor_name,
       donor_email,
       donor_phone,

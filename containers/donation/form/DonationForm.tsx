@@ -24,12 +24,15 @@ export async function DonationForm({ slug }: { slug: string }) {
         <DonationFormFields
           slug={campaign.slug}
           // DON008: isi awal dari profil bila login; field tetap bisa diubah.
+          // Akun nonaktif tetap bisa berdonasi, tetapi seperti tanpa login (A3 backlog 005).
           donor={
-            user && {
-              donor_name: user.fullName ?? "",
-              donor_email: user.email,
-              donor_phone: user.phone ?? "",
-            }
+            user?.isActive
+              ? {
+                  donor_name: user.fullName ?? "",
+                  donor_email: user.email,
+                  donor_phone: user.phone ?? "",
+                }
+              : null
           }
         />
       )}
