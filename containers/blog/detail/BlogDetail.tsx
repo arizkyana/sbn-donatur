@@ -20,7 +20,10 @@ export async function BlogDetail({ slug }: { slug: string }) {
   const post = await getPostBySlug(slug);
   if (!post) notFound();
 
-  const videoId = post.type === "VIDEO" ? getYouTubeId(post.video_url) : null;
+  const videoId =
+    post.type === "VIDEO" && post.video_url
+      ? getYouTubeId(post.video_url)
+      : null;
 
   return (
     <article className="flex flex-col">

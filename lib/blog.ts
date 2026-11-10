@@ -19,7 +19,7 @@ type PostImageSource = {
  */
 export function getPostImage({ type, cover, video_url }: PostImageSource) {
   if (cover) return cover;
-  if (type !== "VIDEO") return null;
+  if (type !== "VIDEO" || !video_url) return null;
   const id = getYouTubeId(video_url);
   return id ? getYouTubeThumbnail(id) : null;
 }
