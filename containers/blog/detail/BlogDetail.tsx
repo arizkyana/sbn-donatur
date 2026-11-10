@@ -59,9 +59,9 @@ export async function BlogDetail({ slug }: { slug: string }) {
       )}
       <div className="flex flex-col gap-2 p-4">
         <Badge variant="secondary">{post.categories.name}</Badge>
-        <h1 className="text-xl leading-snug font-semibold">{post.title}</h1>
+        <h1 className="text-xl leading-snug font-bold">{post.title}</h1>
         {post.published_at && (
-          <p className="text-xs text-muted-foreground">
+          <p className="text-sm text-muted-foreground">
             {formatDateTime(post.published_at)}
           </p>
         )}

@@ -44,11 +44,11 @@ export default function PostCard({ post, eager }: PostCardProps) {
         </div>
         <CardHeader className="gap-2">
           <Badge variant="secondary">{post.categories.name}</Badge>
-          <CardTitle className="line-clamp-2 font-semibold">
+          <CardTitle className="line-clamp-2 text-base font-bold">
             {post.title}
           </CardTitle>
           {post.published_at && (
-            <p className="text-xs text-muted-foreground">
+            <p className="text-sm text-muted-foreground">
               {formatDateTime(post.published_at)}
             </p>
           )}
