@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { ImageIcon } from "lucide-react";
+import { Card } from "@/components/ui/card";
 
 type CampaignSummaryProps = {
   title: string;
@@ -11,8 +12,8 @@ export default function CampaignSummary({
   cover,
 }: CampaignSummaryProps) {
   return (
-    <div className="flex items-center gap-3 border-b p-4">
-      <div className="relative flex aspect-video w-24 shrink-0 items-center justify-center overflow-hidden rounded-md bg-muted">
+    <Card className="flex-row items-center gap-3 p-3">
+      <div className="relative flex aspect-video w-24 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-muted">
         {cover ? (
           <Image
             src={cover}
@@ -26,11 +27,11 @@ export default function CampaignSummary({
         )}
       </div>
       <div className="flex min-w-0 flex-col gap-0.5">
-        <p className="text-xs text-muted-foreground">Donasi untuk</p>
-        <h1 className="line-clamp-2 text-sm leading-snug font-semibold">
+        <p className="text-sm text-muted-foreground">Donasi untuk</p>
+        <h1 className="line-clamp-2 text-base leading-snug font-semibold">
           {title}
         </h1>
       </div>
-    </div>
+    </Card>
   );
 }
